@@ -15,15 +15,15 @@
 
 from __future__ import annotations
 
+import csv
 import html
+import io
 import math
 import logging
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
-
-import csv
-import io
 
 import streamlit as st
 
@@ -55,6 +55,30 @@ BAMBOO_SPECS: dict[str, dict] = {
     "孟宗竹（生竹・未乾燥）": {"E":  7e9, "sigma":  7e6, "note": "含水率が高く弾性係数・強度ともに低下する。乾燥後の使用を強く推奨。"},
     "真竹（乾燥）":           {"E": 11e9, "sigma": 11e6, "note": "肉厚で靭性が高い。工芸・構造用途に適する。"},
     "淡竹（ハチク・乾燥）":   {"E":  9e9, "sigma":  9e6, "note": "細身で軽量。細い部材への使用に向く。"},
+}
+
+# ── 構造安全率（QA推奨）────────────────────────────────────────────
+# 竹の個体差・計算モデルの誤差・動的効果の残余リスクを考慮し、
+# 許容応力を安全率で除したものを「実効許容応力」として使用する。
+# EN 1176（遊具安全基準）・JIS A 8304 参考。
+STRUCTURAL_SAFETY_FACTOR = 3.0
+
+# ── 竹の状態係数テーブル ─────────────────────────────────────────
+# 経年劣化・損傷状態が強度に与える影響を係数で表す。
+# 係数は STRUCTURAL_SAFETY_FACTOR と掛け合わせて実効許容応力に反映される。
+# None = 計算拒否（使用禁止）
+BAMBOO_CONDITION_FACTORS: dict[str, Optional[float]] = {
+    "新品・良好（割れ・虫食いなし）":   1.0,
+    "1〜2年経過（目視異常なし）":        0.8,
+    "微細なひび・変色あり（要注意）":    0.5,
+    "割れあり / 虫食いあり（使用禁止）": None,
+}
+
+BAMBOO_CONDITION_NOTES: dict[str, str] = {
+    "新品・良好（割れ・虫食いなし）":   "乾燥済みで表面・断面に異常なし。標準強度で計算します。",
+    "1〜2年経過（目視異常なし）":        "経年劣化を考慮し強度を20%割り引いて計算します。月1回点検を推奨。",
+    "微細なひび・変色あり（要注意）":    "強度を50%割り引いて計算します。早期交換を強く推奨。",
+    "割れあり / 虫食いあり（使用禁止）": "計算の余地なく使用禁止です。直ちに新しい竹に交換してください。",
 }
 
 # ── 安全チェック閾値 ──────────────────────────────────────────────
@@ -168,22 +192,93 @@ class StructuralResult:
 
 
 # ══════════════════════════════════════════════════════════════════
-# SVGサニタイゼーション
+# SVGサニタイゼーション（ホワイトリスト方式）
 # ══════════════════════════════════════════════════════════════════
+# 【設計方針】
+#   ブロックリスト方式（危険なものを除去）は foreignObject・use・animate・
+#   data:URI などの迂回ルートを完全に塞げない。
+#   ホワイトリスト方式（許可したタグ・属性のみ通す）に変更し、
+#   未知の攻撃ベクタに対しても安全を確保する。
+
+# 許可するSVGタグ（アプリ内で実際に使用するもののみ）
+_SVG_ALLOWED_TAGS: set = {
+    "svg", "g", "circle", "ellipse", "line", "path",
+    "polygon", "polyline", "rect", "text", "tspan",
+}
+
+# 許可する属性（タグ共通）
+_SVG_ALLOWED_ATTRS: set = {
+    # 座標・寸法
+    "cx", "cy", "r", "rx", "ry",
+    "x", "y", "x1", "y1", "x2", "y2",
+    "width", "height", "viewBox", "xmlns",
+    "points", "d",
+    # スタイル
+    "fill", "stroke", "stroke-width", "stroke-dasharray",
+    "stroke-linecap", "stroke-linejoin", "opacity",
+    "font-size", "font-weight", "font-family",
+    "text-anchor", "dominant-baseline",
+    # 変換
+    "transform",
+    # メタ（href・xlink:href は意図的に除外して data:/javascript: を封鎖）
+    "style",
+}
+
+_TAG_RE    = re.compile(r'<(/?)(\w[\w\-]*)((?:\s+[^>]*?)?)\s*(/?)>', re.DOTALL)
+_ATTR_RE   = re.compile(r'([\w\-]+)\s*=\s*(?:"([^"]*?)"|\'([^\']*?)\'|(\S+))', re.DOTALL)
+
+
+def _sanitize_attrs(attr_str: str) -> str:
+    """属性文字列からホワイトリスト外の属性を除去して返す。"""
+    out_parts = []
+    for m in _ATTR_RE.finditer(attr_str):
+        name = m.group(1).lower()
+        val  = m.group(2) or m.group(3) or m.group(4) or ""
+        if name not in _SVG_ALLOWED_ATTRS:
+            continue
+        # 属性値に javascript: / data: が含まれていれば除去
+        if re.search(r'(javascript|data)\s*:', val, re.IGNORECASE):
+            continue
+        out_parts.append(f'{name}="{html.escape(val)}"')
+    return (" " + " ".join(out_parts)) if out_parts else ""
+
+
 def sanitize_svg_content(value: str) -> str:
     """
-    SVGコンテンツの基本サニタイゼーション。
-    - script / on* イベント属性を除去
-    - javascript: URI を除去
+    SVGコンテンツをホワイトリスト方式でサニタイズする。
+    許可リスト外のタグ・属性・プロトコルを完全に除去する。
+    処理順序：
+      1. コンテンツごと除去すべき危険タグ（script/style等）を内容ごと削除
+      2. ホワイトリスト外のタグを除去（属性のみクリーンな許可タグを残す）
     """
-    import re
-    # <script> タグを除去
-    value = re.sub(r'<script[\s\S]*?</script>', '', value, flags=re.IGNORECASE)
-    # on* イベント属性を除去（例：onclick="..."）
-    value = re.sub(r'\bon\w+\s*=\s*["\'][^"\']*["\']', '', value, flags=re.IGNORECASE)
-    # javascript: URI を除去
-    value = re.sub(r'javascript\s*:', 'removed:', value, flags=re.IGNORECASE)
-    return value
+    # Step1: 危険タグはコンテンツ（タグ間テキスト）ごと除去
+    _DANGEROUS_WITH_CONTENT = re.compile(
+        r'<(script|style|set|handler|listener)[\s\S]*?</\1\s*>',
+        re.IGNORECASE
+    )
+    value = _DANGEROUS_WITH_CONTENT.sub('', value)
+    # 自己終了タグ形式の危険タグも除去
+    value = re.sub(
+        r'<(script|style|set|handler|listener|animate|animatetransform|animatemotion'
+        r'|discard|use|image|foreignobject|iframe|embed|object|link|meta|base|form'
+        r'|input|button|video|audio)(\s[^>]*)?>',
+        '', value, flags=re.IGNORECASE
+    )
+
+    # Step2: ホワイトリスト外タグを除去（許可タグの属性もクリーンにする）
+    def replace_tag(m: re.Match) -> str:
+        close   = m.group(1)
+        tag     = m.group(2).lower()
+        attrs   = m.group(3)
+        self_cl = m.group(4)
+        if tag not in _SVG_ALLOWED_TAGS:
+            return ""
+        safe_attrs = _sanitize_attrs(attrs)
+        if self_cl:
+            return f"<{close}{tag}{safe_attrs}/>"
+        return f"<{close}{tag}{safe_attrs}>"
+
+    return _TAG_RE.sub(replace_tag, value)
 
 
 def make_svg(vw: float, vh: float, body: str, title: str = "") -> str:
@@ -335,6 +430,23 @@ def dim_v(x, y1, y2, val) -> str:
             f' transform="rotate(-90,{x-10:.2f},{my:.2f})">{fmt(val)}</text>')
 
 
+def load_marker(cx: float, cy: float, r: float = 10, label: str = "荷重集中・接合注意") -> str:
+    """
+    荷重集中点・接合部の静的警告マーカーを返す（animate不使用）。
+    赤い半透明の円＋ラベルを描画する。
+    cx, cy: SVG座標上の中心位置
+    r: マーカー半径（px）
+    """
+    return (
+        f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{r:.2f}"'
+        f' fill="#e53935" opacity="0.32" stroke="#b71c1c" stroke-width="1.2"/>'
+        f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{r*0.35:.2f}"'
+        f' fill="#b71c1c" opacity="0.75"/>'
+        f'<text x="{cx+r+3:.2f}" y="{cy+4:.2f}"'
+        f' font-size="9" fill="#b71c1c" font-weight="bold">{label}</text>'
+    )
+
+
 # ══════════════════════════════════════════════════════════════════
 # ToolPlugin 基底クラス（遊具を追加するときはこれを継承する）
 # ══════════════════════════════════════════════════════════════════
@@ -389,24 +501,29 @@ class ToolPlugin(ABC):
         msgs: List[CheckMessage] = []
         danger = False
         D = dims.diameter_cm
+        diameter_danger = False   # 直径起因の「危険」が発火したか
 
         if weight > WEIGHT_HEAVY and D < DIAM_MIN_HEAVY:
             msgs.append(CheckMessage("危険",
                 f"体重 {weight}kg に対して竹が細すぎます（直径{DIAM_MIN_HEAVY}cm以上を推奨）",
                 f"直径{DIAM_MIN_HEAVY}cm以上の太い竹に変更してください。"))
             danger = True
+            diameter_danger = True
         elif weight >= WEIGHT_MEDIUM and D < DIAM_MIN_MEDIUM:
             msgs.append(CheckMessage("危険",
                 f"体重 {weight}kg に対して竹が細すぎます（直径{DIAM_MIN_MEDIUM}cm以上を推奨）",
                 f"直径{DIAM_MIN_MEDIUM}cm以上の竹に変更してください。"))
             danger = True
+            diameter_danger = True
         elif D < DIAM_ABSOLUTE_MIN:
             msgs.append(CheckMessage("危険",
                 f"竹が細すぎます（最低{DIAM_ABSOLUTE_MIN}cm、安全のため{DIAM_RECOMMENDED}cm以上推奨）",
                 f"最低でも直径{DIAM_ABSOLUTE_MIN}cm、できれば{DIAM_RECOMMENDED}cm以上の竹を使用してください。"))
             danger = True
+            diameter_danger = True
 
-        if D < DIAM_RECOMMENDED:
+        # 「危険」が発火済みの場合は下位の「警告」を重複出力しない
+        if not diameter_danger and D < DIAM_RECOMMENDED:
             msgs.append(CheckMessage("警告",
                 f"安全率を考慮し、直径{DIAM_RECOMMENDED}cm以上の竹を強く推奨します",
                 f"竹材店や竹林で直径{DIAM_RECOMMENDED}cm以上・肉厚・節間30cm以下の竹を選んでください。"))
@@ -426,6 +543,14 @@ class ToolPlugin(ABC):
         msgs.append(CheckMessage("注意",
             "荷重がかかる点（支点・座面・接合部）の直下または直上に節が来るよう配置してください",
             "竹の節（ふし）は竹の中で最も強い部分です。重さがかかる場所の直下・直上に節が来るように配置してください。"))
+
+        # ── QAチームからの最終警告（全遊具共通）──
+        msgs.append(CheckMessage("注意",
+            "【QA最終警告①】数値の過信禁止：この計算は材料の均質性を前提としています。節の直上への集中荷重は避けてください。"))
+        msgs.append(CheckMessage("注意",
+            "【QA最終警告②】接合部の点検：図面上の赤色マーカー部分はロープ・ビスの緩み一つで崩壊につながります。使用前に必ず確認してください。"))
+        msgs.append(CheckMessage("注意",
+            "【QA最終警告③】環境要因：雨天後の竹は強度が変化します。使用のたびに目視確認を行ってください。"))
 
         return msgs, danger
 
@@ -490,7 +615,7 @@ class SlidePlugin(ToolPlugin):
             warn_thresh = allowable_stress / 1e6 * WARNING_STRESS_RATIO
             msgs.append(CheckMessage("警告",
                 f"滑り面横材の応力が許容値の{round(WARNING_STRESS_RATIO*100)}%を超えています（{res_s.value:.1f} MPa > {warn_thresh:.1f} MPa）",
-                f"竹を1〜2cm太くするか横材を増やしてください。"))
+                "竹を1〜2cm太くするか横材を増やしてください。"))
         else:
             msgs.append(CheckMessage("注意",
                 f"滑り面横材 曲げ応力：{res_s.value:.1f} MPa（許容{allowable_stress/1e6:.0f} MPa以内 ✓）"))
@@ -557,6 +682,9 @@ class SlidePlugin(ToolPlugin):
             s += ell(bx, by, T*self.SLAT_ELLIPSE_RX, T/2, BF, BD, 0.6)
             s += ell(bx, by, T*self.SLAT_ELLIPSE_RX*0.5, T/2*0.5, BM, BD, 0.35, 0.6)
         s += bamboo_slat(sx, sy+ny*T*self.HANDRAIL_OFFSET, ex, gy+ny*T*self.HANDRAIL_OFFSET, T*self.HANDRAIL_WIDTH)
+        # ── 荷重集中点マーカー（支点・フレーム接合部）──
+        s += load_marker(sx, gy, r=9, label="支点・接合注意")
+        s += load_marker(ex, gy, r=9, label="支点・接合注意")
         s += dim_h(sx, ex, gy+28, aL)
         s += dim_v(sx-36, sy, gy, H)
         svg_side = make_svg(VW, VH, s, f"側面図（横材 {num}本）")
@@ -598,11 +726,21 @@ class SlidePlugin(ToolPlugin):
         t2 += dim_v(tx-36, ty, ty+tl, aL)
         svg_top = make_svg(TVW, TVH, t2, f"上面図（横材 {num}本）")
 
+        # パイプ長さ = 滑り台の幅（横材1本分）、本数 = 横材本数と同数
+        pipe_len_cm = round(W * 100)
+        # 垂木ブロック：横材1本につき左右2個
+        bracket_len_cm = round(Dc * 2)  # 竹径の2倍程度の長さ
         materials = [
-            Material(f"滑り面横材 直径{Dc:.0f}cm", round(W*100),         num),
-            Material(f"手すり竹   直径{Dc:.0f}cm", round(slope_len*100), 2),
-            Material("木材フレーム（側板）",         round(aL*100),        2, is_wood=True),
-            Material("木材フレーム（端板）",         round(W*100),         2, is_wood=True),
+            Material(f"滑り面横材 直径{Dc:.0f}cm",          round(W*100),         num),
+            Material(f"直管パイプ（芯材・φ推奨{max(19,round(Dc*0.27))}mm）",
+                     pipe_len_cm, num, is_wood=False),
+            Material(f"手すり竹   直径{Dc:.0f}cm",          round(slope_len*100), 2),
+            Material("木材フレーム（側板）",                  round(aL*100),        2, is_wood=True),
+            Material("木材フレーム（端板）",                  round(W*100),         2, is_wood=True),
+            Material(f"垂木ブロック（竹固定用）高さ{Dc:.0f}cm", bracket_len_cm,   num*2, is_wood=True),
+            Material("コーススレッドビス 65mm以上",           65,                   num*4, is_wood=True),
+            Material("束石（地面固定用）",                    30,                   2, is_wood=True),
+            Material("アンカーボルト M10以上",                100,                  4, is_wood=True),
         ]
         return svg_side, svg_top, materials
 
@@ -748,6 +886,12 @@ class SwingPlugin(ToolPlugin):
               f' stroke="{ROPE}" stroke-width="{sw_w:.2f}" stroke-dasharray="5,3"/>')
         s += bamboo_slat(rope_top_x-seat_half*self.SEAT_EXTEND_RATIO, rope_bot_y,
                          rope_top_x+seat_half*self.SEAT_EXTEND_RATIO, rope_bot_y, T/2)
+        # ── 荷重集中点マーカー（頂点接合・ロープ取付・脚接地）──
+        s += load_marker(lx, apex_y, r=10, label="頂点接合注意")
+        s += load_marker(rx, apex_y, r=10, label="頂点接合注意")
+        s += load_marker(rope_top_x, apex_y, r=8, label="ロープ取付")
+        s += load_marker(lx, gy, r=8, label="脚接地・固定注意")
+        s += load_marker(rx, gy, r=8, label="脚接地・固定注意")
         s += dim_h(ox, ox+fw, gy+30, W)
         s += dim_v(ox-44, apex_y, gy, H)
         svg_side = make_svg(VW, VH, s, "側面図（三脚ブランコ）")
@@ -905,6 +1049,10 @@ class JungleGymPlugin(ToolPlugin):
                   f' fill="none" stroke="{BL}" stroke-width="{T*self.RING_HL_RATIO:.2f}" opacity="0.4"/>')
 
         s += ell(cx_s, ay, T*self.APEX_SCALE, T*self.APEX_SCALE, BM, BD, 1.2)
+        # ── 荷重集中点マーカー（頂点・脚接地部）──
+        s += load_marker(cx_s, ay, r=11, label="頂点接合注意")
+        for fx in feet:
+            s += load_marker(fx, gy, r=8, label="脚接地・固定注意")
         s += dim_h(cx_s-fw/2, cx_s+fw/2, gy+30, W)
         s += dim_v(cx_s-fw/2-44, ay, gy, H)
         svg_side = make_svg(VW, VH, s, f"側面図（円錐型 {n_poles}本）")
@@ -971,8 +1119,21 @@ REGISTRY: dict[str, ToolPlugin] = {
 GLOBAL_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=M+PLUS+Rounded+1c:wght@400;700&display=swap');
-html, body, [class*="css"], .stMarkdown, p, div, span, label, button {
+html, body, [class*="css"], .stMarkdown, p, div, label, button {
     font-family: 'Zen Maru Gothic', 'M PLUS Rounded 1c', 'Hiragino Maru Gothic Pro', sans-serif !important;
+}
+/* ── アイコンフォント保護（最重要）──
+   Streamlit の Material Symbols Rounded フォントによるアイコン表示を守る。
+   data-testid="stIconMaterial" の span が実際のアイコン文字（keyboard_arrow_right 等）を
+   描画しており、ここに日本語フォントが継承されると英字がそのまま表示される。 */
+[data-testid="stIconMaterial"],
+[data-testid="stExpanderIconCheck"],
+[data-testid="stExpanderIconError"],
+[data-testid="stExpanderIconSpinner"],
+[data-testid="stExpanderIcon"],
+[data-testid="stSpinnerIcon"],
+[data-testid="stImageIcon"] {
+    font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
 }
 .block-container { padding: 1.2rem 1.5rem 2rem; max-width: 1200px; }
 @media(max-width:768px) { .block-container { padding: 0.5rem 0.5rem 1rem; } }
@@ -1007,7 +1168,6 @@ details summary::-webkit-details-marker { display: none; }
 .stButton > button { font-family: 'Zen Maru Gothic', sans-serif !important; border-radius: 30px !important; background: linear-gradient(135deg, #5aaa4a, #3d8a3d) !important; color: white !important; font-weight: 700 !important; font-size: 1.05rem !important; border: none !important; letter-spacing: 0.05em; padding: 0.5rem 1rem !important; transition: box-shadow 0.2s; }
 .stButton > button:hover { box-shadow: 0 4px 16px #3d8a3d60 !important; }
 div[data-testid="stAlert"] { border-radius: 12px !important; font-family: 'Zen Maru Gothic', sans-serif !important; }
-button[data-testid="collapsedControl"] { display: none !important; }
 </style>
 """
 
@@ -1085,6 +1245,582 @@ def render_safety_messages(messages: List[CheckMessage], danger: bool):
 # ══════════════════════════════════════════════════════════════════
 # Streamlit メインUI
 # ══════════════════════════════════════════════════════════════════
+
+# ══════════════════════════════════════════════════════════════════
+# 製作手順ガイド用 SVGイラスト
+# ══════════════════════════════════════════════════════════════════
+
+def _svg_step1_pipe() -> str:
+    """① 直管パイプを用意する"""
+    return '''<svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:320px;height:auto;">
+  <!-- パイプ本体（筒） -->
+  <rect x="30" y="48" width="240" height="24" rx="4" fill="#b0bec5" stroke="#607d8b" stroke-width="1.5"/>
+  <!-- 左端面（楕円） -->
+  <ellipse cx="30" cy="60" rx="6" ry="12" fill="#eceff1" stroke="#607d8b" stroke-width="1.5"/>
+  <!-- 右端面（楕円） -->
+  <ellipse cx="270" cy="60" rx="6" ry="12" fill="#eceff1" stroke="#607d8b" stroke-width="1.5"/>
+  <!-- 内腔（左） -->
+  <ellipse cx="30" cy="60" rx="3" ry="7" fill="#90a4ae" stroke="none"/>
+  <!-- 内腔（右） -->
+  <ellipse cx="270" cy="60" rx="3" ry="7" fill="#90a4ae" stroke="none"/>
+  <!-- ハイライト線 -->
+  <line x1="30" y1="52" x2="270" y2="52" stroke="#cfd8dc" stroke-width="1.2" opacity="0.7"/>
+  <!-- ラベル -->
+  <text x="150" y="105" text-anchor="middle" font-size="12" fill="#37474f" font-family="sans-serif">直管パイプ</text>
+  <text x="150" y="18" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">竹の内径に合うサイズを選ぶ</text>
+</svg>'''
+
+
+def _svg_step2_cut() -> str:
+    """② パイプカッターで切断"""
+    return '''<svg viewBox="0 0 320 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:320px;height:auto;">
+  <!-- パイプ左部分 -->
+  <rect x="20" y="52" width="120" height="22" rx="3" fill="#b0bec5" stroke="#607d8b" stroke-width="1.5"/>
+  <ellipse cx="20" cy="63" rx="5" ry="11" fill="#eceff1" stroke="#607d8b" stroke-width="1.5"/>
+  <!-- パイプ右部分（切断後） -->
+  <rect x="168" y="52" width="110" height="22" rx="3" fill="#b0bec5" stroke="#607d8b" stroke-width="1.5"/>
+  <ellipse cx="278" cy="63" rx="5" ry="11" fill="#eceff1" stroke="#607d8b" stroke-width="1.5"/>
+  <!-- 切断位置マーク -->
+  <line x1="148" y1="38" x2="148" y2="90" stroke="#e53935" stroke-width="2" stroke-dasharray="4,3"/>
+  <!-- パイプカッター本体 -->
+  <rect x="136" y="44" width="24" height="36" rx="5" fill="#ff8f00" stroke="#e65100" stroke-width="1.5"/>
+  <!-- カッター刃 -->
+  <ellipse cx="148" cy="80" rx="12" ry="5" fill="#424242" stroke="#212121" stroke-width="1"/>
+  <!-- ハンドル -->
+  <line x1="160" y1="56" x2="178" y2="42" stroke="#795548" stroke-width="3" stroke-linecap="round"/>
+  <!-- 切断寸法矢印 -->
+  <line x1="20" y1="100" x2="148" y2="100" stroke="#607d8b" stroke-width="1"/>
+  <polygon points="20,97 20,103 10,100" fill="#607d8b"/>
+  <polygon points="148,97 148,103 158,100" fill="#607d8b"/>
+  <text x="84" y="115" text-anchor="middle" font-size="11" fill="#37474f" font-family="sans-serif">滑り台の幅に合わせてカット</text>
+  <text x="160" y="18" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">パイプカッターで切断</text>
+</svg>'''
+
+
+def _svg_step3_frame() -> str:
+    """③ 垂木をカットしてビスで固定"""
+    return '''<svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:320px;height:auto;">
+  <!-- 長い木材フレーム（横） -->
+  <rect x="20" y="70" width="280" height="20" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+  <line x1="20" y1="76" x2="300" y2="76" stroke="#a1887f" stroke-width="0.8" opacity="0.5"/>
+  <!-- 垂木ブロック1 -->
+  <rect x="38" y="48" width="22" height="24" rx="2" fill="#a1887f" stroke="#5d4037" stroke-width="1.2"/>
+  <!-- 垂木ブロック2 -->
+  <rect x="98" y="48" width="22" height="24" rx="2" fill="#a1887f" stroke="#5d4037" stroke-width="1.2"/>
+  <!-- 垂木ブロック3 -->
+  <rect x="158" y="48" width="22" height="24" rx="2" fill="#a1887f" stroke="#5d4037" stroke-width="1.2"/>
+  <!-- 垂木ブロック4 -->
+  <rect x="218" y="48" width="22" height="24" rx="2" fill="#a1887f" stroke="#5d4037" stroke-width="1.2"/>
+  <!-- ビス（各ブロック） -->
+  <circle cx="49" cy="62" r="3" fill="#bdbdbd" stroke="#757575" stroke-width="0.8"/>
+  <circle cx="109" cy="62" r="3" fill="#bdbdbd" stroke="#757575" stroke-width="0.8"/>
+  <circle cx="169" cy="62" r="3" fill="#bdbdbd" stroke="#757575" stroke-width="0.8"/>
+  <circle cx="229" cy="62" r="3" fill="#bdbdbd" stroke="#757575" stroke-width="0.8"/>
+  <!-- 間隔矢印 -->
+  <line x1="60" y1="108" x2="98" y2="108" stroke="#607d8b" stroke-width="1"/>
+  <polygon points="60,105 60,111 50,108" fill="#607d8b"/>
+  <polygon points="98,105 98,111 108,108" fill="#607d8b"/>
+  <text x="79" y="122" text-anchor="middle" font-size="10" fill="#37474f" font-family="sans-serif">等間隔</text>
+  <text x="160" y="18" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">垂木を等間隔に並べてビス固定</text>
+  <!-- ラベル -->
+  <text x="265" y="58" font-size="10" fill="#5d4037" font-family="sans-serif">垂木</text>
+  <text x="265" y="84" font-size="10" fill="#5d4037" font-family="sans-serif">フレーム</text>
+</svg>'''
+
+
+def _svg_step4_node() -> str:
+    """④ 竹の節をハンマーで抜く"""
+    return '''<svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:320px;height:auto;">
+  <!-- 竹本体（筒・断面） -->
+  <rect x="30" y="50" width="200" height="36" rx="6" fill="#4caf50" stroke="#2e7d32" stroke-width="1.8"/>
+  <!-- 竹の内腔 -->
+  <rect x="34" y="55" width="192" height="26" rx="4" fill="#81c784" stroke="none" opacity="0.5"/>
+  <!-- 節（リング） -->
+  <rect x="115" y="50" width="12" height="36" rx="2" fill="#388e3c" stroke="#1b5e20" stroke-width="1.2"/>
+  <text x="121" y="45" text-anchor="middle" font-size="10" fill="#1b5e20" font-family="sans-serif">節</text>
+  <!-- ハンマー -->
+  <rect x="240" y="30" width="36" height="22" rx="4" fill="#424242" stroke="#212121" stroke-width="1.5"/>
+  <line x1="252" y1="52" x2="230" y2="72" stroke="#795548" stroke-width="5" stroke-linecap="round"/>
+  <!-- 叩く矢印 -->
+  <line x1="235" y1="58" x2="200" y2="58" stroke="#e53935" stroke-width="2"/>
+  <polygon points="200,54 200,62 188,58" fill="#e53935"/>
+  <!-- 左端面 -->
+  <ellipse cx="30" cy="68" rx="6" ry="18" fill="#66bb6a" stroke="#2e7d32" stroke-width="1.5"/>
+  <ellipse cx="30" cy="68" rx="3" ry="10" fill="#a5d6a7" stroke="none"/>
+  <text x="160" y="110" text-anchor="middle" font-size="11" fill="#1b5e20" font-family="sans-serif">ハンマーで端から叩いて節を抜く</text>
+  <text x="160" y="20" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">竹の節を除去する</text>
+</svg>'''
+
+
+def _svg_step5_roller() -> str:
+    """⑤ パイプを通した竹をフレームに並べる"""
+    return '''<svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:320px;height:auto;">
+  <!-- フレーム左 -->
+  <rect x="18" y="40" width="14" height="80" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.2"/>
+  <!-- フレーム右 -->
+  <rect x="288" y="40" width="14" height="80" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.2"/>
+  <!-- 竹ローラー4本 -->
+  <!-- ローラー1 -->
+  <rect x="32" y="50" width="256" height="18" rx="9" fill="#4caf50" stroke="#2e7d32" stroke-width="1.5"/>
+  <ellipse cx="32" cy="59" rx="5" ry="9" fill="#66bb6a" stroke="#2e7d32" stroke-width="1.2"/>
+  <ellipse cx="288" cy="59" rx="5" ry="9" fill="#66bb6a" stroke="#2e7d32" stroke-width="1.2"/>
+  <!-- パイプ（芯・左端面） -->
+  <ellipse cx="32" cy="59" rx="3" ry="5" fill="#b0bec5" stroke="#607d8b" stroke-width="0.8"/>
+  <ellipse cx="288" cy="59" rx="3" ry="5" fill="#b0bec5" stroke="#607d8b" stroke-width="0.8"/>
+  <!-- ローラー2 -->
+  <rect x="32" y="72" width="256" height="18" rx="9" fill="#4caf50" stroke="#2e7d32" stroke-width="1.5"/>
+  <ellipse cx="32" cy="81" rx="5" ry="9" fill="#66bb6a" stroke="#2e7d32" stroke-width="1.2"/>
+  <ellipse cx="288" cy="81" rx="5" ry="9" fill="#66bb6a" stroke="#2e7d32" stroke-width="1.2"/>
+  <ellipse cx="32" cy="81" rx="3" ry="5" fill="#b0bec5" stroke="#607d8b" stroke-width="0.8"/>
+  <ellipse cx="288" cy="81" rx="3" ry="5" fill="#b0bec5" stroke="#607d8b" stroke-width="0.8"/>
+  <!-- ローラー3 -->
+  <rect x="32" y="94" width="256" height="18" rx="9" fill="#4caf50" stroke="#2e7d32" stroke-width="1.5"/>
+  <ellipse cx="32" cy="103" rx="5" ry="9" fill="#66bb6a" stroke="#2e7d32" stroke-width="1.2"/>
+  <ellipse cx="288" cy="103" rx="5" ry="9" fill="#66bb6a" stroke="#2e7d32" stroke-width="1.2"/>
+  <ellipse cx="32" cy="103" rx="3" ry="5" fill="#b0bec5" stroke="#607d8b" stroke-width="0.8"/>
+  <ellipse cx="288" cy="103" rx="3" ry="5" fill="#b0bec5" stroke="#607d8b" stroke-width="0.8"/>
+  <text x="160" y="132" text-anchor="middle" font-size="11" fill="#2e7d32" font-family="sans-serif">パイプ入り竹をフレームに並べる</text>
+  <text x="160" y="18" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">竹ローラーをフレームに組み付け</text>
+</svg>'''
+
+
+def _svg_step6_handrail() -> str:
+    """⑥ 手すり竹を取り付ける"""
+    return '''<svg viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:320px;height:auto;">
+  <!-- フレーム左 -->
+  <rect x="18" y="60" width="12" height="70" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.2"/>
+  <!-- フレーム右 -->
+  <rect x="290" y="60" width="12" height="70" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.2"/>
+  <!-- ローラー竹（3本） -->
+  <rect x="30" y="68" width="260" height="14" rx="7" fill="#4caf50" stroke="#2e7d32" stroke-width="1.2"/>
+  <rect x="30" y="86" width="260" height="14" rx="7" fill="#4caf50" stroke="#2e7d32" stroke-width="1.2"/>
+  <rect x="30" y="104" width="260" height="14" rx="7" fill="#4caf50" stroke="#2e7d32" stroke-width="1.2"/>
+  <!-- 手すり竹（左） -->
+  <rect x="14" y="28" width="260" height="22" rx="11" fill="#2e7d32" stroke="#1b5e20" stroke-width="2"/>
+  <ellipse cx="14" cy="39" rx="6" ry="11" fill="#388e3c" stroke="#1b5e20" stroke-width="1.5"/>
+  <ellipse cx="274" cy="39" rx="6" ry="11" fill="#388e3c" stroke="#1b5e20" stroke-width="1.5"/>
+  <!-- ドリル穴マーク -->
+  <circle cx="34" cy="39" r="4" fill="#1b5e20" stroke="#fff" stroke-width="0.8" opacity="0.8"/>
+  <circle cx="254" cy="39" r="4" fill="#1b5e20" stroke="#fff" stroke-width="0.8" opacity="0.8"/>
+  <!-- ビス -->
+  <line x1="34" y1="35" x2="34" y2="52" stroke="#bdbdbd" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="254" y1="35" x2="254" y2="52" stroke="#bdbdbd" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="155" y="142" text-anchor="middle" font-size="11" fill="#1b5e20" font-family="sans-serif">手すり竹をドリル穴あけ→ビス固定</text>
+  <text x="155" y="18" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">手すり竹を両側に取り付ける</text>
+</svg>'''
+
+
+def _svg_step7_slope() -> str:
+    """⑦ 支柱の組み方・地面固定方法"""
+    return '''<svg viewBox="0 0 340 190" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
+  <text x="170" y="14" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">支柱の組み方と地面固定（最重要）</text>
+  <!-- 地面 -->
+  <rect x="0" y="162" width="340" height="28" fill="#d7ccc8"/>
+  <line x1="0" y1="162" x2="340" y2="162" stroke="#795548" stroke-width="2"/>
+  <!-- 支柱高（束石固定） -->
+  <rect x="30" y="68" width="16" height="94" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+  <!-- 束石（高支柱） -->
+  <rect x="20" y="150" width="36" height="14" rx="2" fill="#9e9e9e" stroke="#616161" stroke-width="1.5"/>
+  <!-- アンカーボルト（高） -->
+  <line x1="38" y1="162" x2="38" y2="175" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
+  <text x="20" y="185" font-size="8" fill="#37474f" font-family="sans-serif">束石+ボルト</text>
+  <!-- 支柱低 -->
+  <rect x="224" y="122" width="16" height="40" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+  <!-- 束石（低支柱） -->
+  <rect x="214" y="150" width="36" height="14" rx="2" fill="#9e9e9e" stroke="#616161" stroke-width="1.5"/>
+  <line x1="232" y1="162" x2="232" y2="175" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
+  <!-- 斜め筋交い -->
+  <line x1="46" y1="120" x2="224" y2="148" stroke="#a1887f" stroke-width="4" stroke-linecap="round"/>
+  <text x="130" y="146" text-anchor="middle" font-size="9" fill="#5d4037" font-family="sans-serif" transform="rotate(-8,130,146)">筋交い</text>
+  <!-- 斜面フレーム -->
+  <polygon points="30,68 46,68 240,122 224,122" fill="#a1887f" stroke="#5d4037" stroke-width="1.5" opacity="0.8"/>
+  <!-- ローラー面 -->
+  <line x1="44" y1="72" x2="236" y2="124" stroke="#4caf50" stroke-width="7" stroke-linecap="round" opacity="0.85"/>
+  <!-- 傾斜角マーク -->
+  <path d="M 224 130 A 32 32 0 0 0 198 148" fill="none" stroke="#e53935" stroke-width="1.5"/>
+  <text x="188" y="161" font-size="9" fill="#c62828" font-family="sans-serif">≦35°</text>
+  <!-- 説明ボックス -->
+  <rect x="265" y="30" width="70" height="118" rx="6" fill="#fce4ec" stroke="#c62828" stroke-width="1.2"/>
+  <text x="300" y="46" text-anchor="middle" font-size="9" fill="#b71c1c" font-weight="bold" font-family="sans-serif">固定方法</text>
+  <text x="270" y="62" font-size="8" fill="#37474f" font-family="sans-serif">①束石を</text>
+  <text x="270" y="74" font-size="8" fill="#37474f" font-family="sans-serif">　地面に埋込</text>
+  <text x="270" y="90" font-size="8" fill="#37474f" font-family="sans-serif">②アンカー</text>
+  <text x="270" y="102" font-size="8" fill="#37474f" font-family="sans-serif">　ボルト固定</text>
+  <text x="270" y="118" font-size="8" fill="#37474f" font-family="sans-serif">③筋交いを</text>
+  <text x="270" y="130" font-size="8" fill="#37474f" font-family="sans-serif">　必ず入れる</text>
+  <text x="270" y="142" font-size="8" fill="#c62828" font-family="sans-serif">⚠転倒防止</text>
+</svg>'''
+
+
+def _svg_step8_complete() -> str:
+    """⑧ 完成図"""
+    return '''<svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:320px;height:auto;">
+  <!-- 地面 -->
+  <rect x="0" y="155" width="320" height="25" fill="#e8d5b0" stroke="none"/>
+  <line x1="0" y1="155" x2="320" y2="155" stroke="#795548" stroke-width="1.5"/>
+  <!-- 支柱左高 -->
+  <rect x="28" y="42" width="13" height="113" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.2"/>
+  <!-- 支柱右低 -->
+  <rect x="228" y="118" width="13" height="37" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.2"/>
+  <!-- 斜面フレーム -->
+  <polygon points="28,42 41,42 241,118 228,118" fill="#a1887f" stroke="#5d4037" stroke-width="1.2"/>
+  <!-- ローラー竹（6本） -->
+  <line x1="46" y1="52" x2="228" y2="112" stroke="#4caf50" stroke-width="9" stroke-linecap="round" opacity="0.9"/>
+  <line x1="66" y1="57" x2="228" y2="112" stroke="#388e3c" stroke-width="2" opacity="0.3"/>
+  <!-- 手すり竹（左側） -->
+  <line x1="28" y1="28" x2="228" y2="105" stroke="#2e7d32" stroke-width="12" stroke-linecap="round" opacity="0.85"/>
+  <!-- 手すり竹（右側・奥） -->
+  <line x1="41" y1="30" x2="241" y2="107" stroke="#1b5e20" stroke-width="10" stroke-linecap="round" opacity="0.5"/>
+  <!-- 完成ラベル -->
+  <text x="160" y="170" text-anchor="middle" font-size="13" fill="#2e7d32" font-weight="bold" font-family="sans-serif">竹コースター滑り台　完成！</text>
+  <text x="160" y="18" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">全体を組み上げて完成</text>
+</svg>'''
+
+
+_STEP_SVGS = [
+    _svg_step1_pipe,
+    _svg_step2_cut,
+    _svg_step3_frame,
+    _svg_step4_node,
+    _svg_step5_roller,
+    _svg_step6_handrail,
+    _svg_step7_slope,
+    _svg_step8_complete,
+]
+
+
+# ── SVG：③ 垂木の両側挟み込み固定（画像確認に基づく正確な構造）──
+def _svg_step3_clamp() -> str:
+    """③ 垂木で竹を両側から挟み込んでビス固定"""
+    return '''<svg viewBox="0 0 340 190" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
+  <text x="170" y="14" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">垂木ブロックで竹を両側から挟み込みビス固定</text>
+  <!-- フレーム長材（横） -->
+  <rect x="10" y="88" width="320" height="18" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+  <!-- 竹（断面・横） -->
+  <ellipse cx="80" cy="76" rx="22" ry="22" fill="#4caf50" stroke="#2e7d32" stroke-width="2"/>
+  <ellipse cx="80" cy="76" rx="10" ry="10" fill="#81c784" stroke="#388e3c" stroke-width="1"/>
+  <!-- パイプ芯（断面） -->
+  <ellipse cx="80" cy="76" rx="5" ry="5" fill="#b0bec5" stroke="#607d8b" stroke-width="1.2"/>
+  <!-- 垂木ブロック（左側） -->
+  <rect x="42" y="56" width="18" height="50" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="1.5"/>
+  <!-- 垂木ブロック（右側） -->
+  <rect x="100" y="56" width="18" height="50" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="1.5"/>
+  <!-- ビス（左垂木→フレーム） -->
+  <line x1="51" y1="100" x2="51" y2="110" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="47,110 55,110 51,118" fill="#9e9e9e"/>
+  <!-- ビス（右垂木→フレーム） -->
+  <line x1="109" y1="100" x2="109" y2="110" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="105,110 113,110 109,118" fill="#9e9e9e"/>
+  <!-- ラベル：垂木L -->
+  <text x="30" y="52" font-size="9" fill="#5d4037" font-family="sans-serif">垂木(左)</text>
+  <!-- ラベル：垂木R -->
+  <text x="100" y="52" font-size="9" fill="#5d4037" font-family="sans-serif">垂木(右)</text>
+  <!-- ラベル：竹 -->
+  <text x="68" y="132" font-size="9" fill="#2e7d32" font-family="sans-serif">竹+パイプ</text>
+  <!-- 矢印：挟み込みイメージ -->
+  <line x1="60" y1="76" x2="44" y2="76" stroke="#e53935" stroke-width="1.5"/>
+  <polygon points="44,73 44,79 36,76" fill="#e53935"/>
+  <line x1="100" y1="76" x2="116" y2="76" stroke="#e53935" stroke-width="1.5"/>
+  <polygon points="116,73 116,79 124,76" fill="#e53935"/>
+  <!-- 2本目の竹セット（右側に繰り返しイメージ） -->
+  <ellipse cx="220" cy="76" rx="22" ry="22" fill="#4caf50" stroke="#2e7d32" stroke-width="2"/>
+  <ellipse cx="220" cy="76" rx="10" ry="10" fill="#81c784" stroke="#388e3c" stroke-width="1"/>
+  <ellipse cx="220" cy="76" rx="5" ry="5" fill="#b0bec5" stroke="#607d8b" stroke-width="1.2"/>
+  <rect x="182" y="56" width="18" height="50" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="1.5"/>
+  <rect x="240" y="56" width="18" height="50" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="1.5"/>
+  <line x1="191" y1="100" x2="191" y2="110" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="187,110 195,110 191,118" fill="#9e9e9e"/>
+  <line x1="249" y1="100" x2="249" y2="110" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="245,110 253,110 249,118" fill="#9e9e9e"/>
+  <!-- 説明 -->
+  <rect x="10" y="148" width="320" height="36" rx="5" fill="#fff8e1" stroke="#f9a825" stroke-width="1.2"/>
+  <text x="170" y="162" text-anchor="middle" font-size="9" fill="#37474f" font-family="sans-serif">竹の両側に垂木ブロックを密着させてフレームにビス固定。</text>
+  <text x="170" y="177" text-anchor="middle" font-size="9" fill="#e65100" font-family="sans-serif">切り込み不要。ブロックの高さ＝竹の直径程度が目安。</text>
+</svg>'''
+
+
+# ── SVG：⑥ 手すり固定方法（貫通穴＋木材設置面ビス）──
+def _svg_step6_handrail_v2() -> str:
+    """⑥ 手すり竹：貫通穴あけ→木材設置面にビス固定"""
+    return '''<svg viewBox="0 0 340 195" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
+  <text x="170" y="14" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">手すり竹の固定方法（2ステップ）</text>
+
+  <!-- ===== STEP A: ドリルで貫通穴 ===== -->
+  <text x="90" y="34" text-anchor="middle" font-size="10" fill="#1565c0" font-weight="bold" font-family="sans-serif">Step A: 貫通穴をあける</text>
+  <!-- 手すり竹（断面・横向き） -->
+  <ellipse cx="90" cy="72" rx="28" ry="28" fill="#2e7d32" stroke="#1b5e20" stroke-width="2"/>
+  <ellipse cx="90" cy="72" rx="14" ry="14" fill="#388e3c" stroke="#1b5e20" stroke-width="1"/>
+  <!-- ドリルビット -->
+  <line x1="90" y1="20" x2="90" y2="56" stroke="#424242" stroke-width="5" stroke-linecap="round"/>
+  <polygon points="84,56 96,56 90,66" fill="#757575"/>
+  <!-- 貫通穴（竹上面） -->
+  <ellipse cx="90" cy="52" rx="5" ry="3" fill="#1b5e20" stroke="#000" stroke-width="0.8"/>
+  <!-- 貫通穴（竹下面） -->
+  <ellipse cx="90" cy="92" rx="5" ry="3" fill="#1b5e20" stroke="#000" stroke-width="0.8"/>
+  <!-- 矢印：ドリル方向 -->
+  <line x1="90" y1="15" x2="90" y2="22" stroke="#e53935" stroke-width="1.5"/>
+  <polygon points="86,22 94,22 90,28" fill="#e53935"/>
+  <text x="110" y="25" font-size="9" fill="#c62828" font-family="sans-serif">ドリルで</text>
+  <text x="110" y="37" font-size="9" fill="#c62828" font-family="sans-serif">貫通穴あけ</text>
+
+  <!-- ===== STEP B: 木材設置面にビス固定 ===== -->
+  <text x="255" y="34" text-anchor="middle" font-size="10" fill="#1565c0" font-weight="bold" font-family="sans-serif">Step B: 木材へビス固定</text>
+  <!-- 木材（フレーム断面） -->
+  <rect x="216" y="90" width="80" height="22" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+  <!-- 手すり竹（下面が木材に接触） -->
+  <ellipse cx="256" cy="72" rx="28" ry="20" fill="#2e7d32" stroke="#1b5e20" stroke-width="2"/>
+  <ellipse cx="256" cy="68" rx="14" ry="10" fill="#388e3c" stroke="#1b5e20" stroke-width="1"/>
+  <!-- 設置面（竹の底と木材の接触ライン） -->
+  <line x1="216" y1="90" x2="296" y2="90" stroke="#e53935" stroke-width="2" stroke-dasharray="4,2"/>
+  <text x="303" y="93" font-size="8" fill="#c62828" font-family="sans-serif">設置面</text>
+  <!-- ビス（竹貫通穴→木材） -->
+  <line x1="244" y1="60" x2="244" y2="106" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="240,106 248,106 244,114" fill="#9e9e9e"/>
+  <line x1="268" y1="60" x2="268" y2="106" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="264,106 272,106 268,114" fill="#9e9e9e"/>
+  <text x="256" y="130" text-anchor="middle" font-size="9" fill="#37474f" font-family="sans-serif">貫通穴を通して</text>
+  <text x="256" y="142" text-anchor="middle" font-size="9" fill="#37474f" font-family="sans-serif">木材にビス固定</text>
+
+  <!-- 注意ボックス -->
+  <rect x="10" y="155" width="320" height="36" rx="5" fill="#e8f5e9" stroke="#2e7d32" stroke-width="1.2"/>
+  <text x="170" y="169" text-anchor="middle" font-size="9" fill="#1b5e20" font-family="sans-serif">① ドリルで竹に貫通穴をあける（竹径より細いビットで）</text>
+  <text x="170" y="184" text-anchor="middle" font-size="9" fill="#1b5e20" font-family="sans-serif">② 貫通穴から長ビスを通し、竹と木材の設置面をしっかり固定する</text>
+</svg>'''
+
+
+def render_slide_construction_guide(diameter_cm: float):
+    """
+    滑り台の製作手順ガイドを表示する（全指摘反映・安全設計版）。
+    diameter_cm: サイドバーで設定した竹の直径（cm）。
+    """
+    st.subheader("🔨 竹滑り台　製作手順ガイド")
+
+    st.warning(
+        "⚠️ **製作前に必ずお読みください**\n\n"
+        "このガイドは竹コースター滑り台の一般的な製作手順を示すものです。"
+        "竹は天然材料のため個体差が大きく、本ガイド通りに製作しても安全を保証するものではありません。"
+        "**製作・設置・使用前に、必ず建築士・構造専門家による安全確認を受けてください。**"
+    )
+
+    steps = [
+        {
+            "title": "① コースターの芯（直管パイプ）を用意する",
+            "icon": "🔩",
+            "svg": _svg_step1_pipe,
+            "desc": (
+                "滑り面を構成するローラー竹の芯材として、金属製の**直管パイプ**を使用します。"
+                "パイプを竹の内腔に通すことで芯が入り、強度と横ずれ防止の役割を果たします。\n\n"
+                "**参考動画では竹の直径が約7cmのため、直管パイプ φ19mm（最細規格）を使用しています。**"
+                "竹の直径が大きい場合はパイプ径も合わせて選んでください。"
+            ),
+            "points": [
+                "パイプ外径は竹の内径より必ず小さいものを選ぶ（内径に余裕が必要）。",
+                "【目安】竹径 約7cm → φ19mm / 竹径 約8〜10cm → φ25.4mm / 竹径 約10〜12cm → φ34mm",
+                "亜鉛メッキ単管パイプは錆びにくく屋外使用に適している。",
+                "パイプ長さ ＝ 竹の長さ ＋ 両端の垂木ブロック固定代（各側20〜30mm）。竹より長くする必要がある。",
+            ],
+        },
+        {
+            "title": "② パイプカッターで一定の長さに切断する",
+            "icon": "✂️",
+            "svg": _svg_step2_cut,
+            "desc": (
+                "**パイプカッター**を使ってパイプを正確に切断します。"
+                "パイプは竹の長さより**長く**カットします。"
+                "竹の両端からパイプが飛び出した部分を垂木ブロックで両側から固定することで、"
+                "竹そのものがパイプを軸にして回転（ローラー）します。"
+                "グラインダーでも切断可能ですが、パイプカッターの方が断面が垂直で安全です。"
+            ),
+            "points": [
+                "パイプ長さ ＝ 竹の長さ ＋ 両端の垂木ブロック固定分（各側20〜30mm程度の余長）。",
+                "パイプが竹の両端から確実に飛び出していることを確認してからカットする。",
+                "切断後は必ずヤスリでバリ取りを行う（子どもの手が触れる面は念入りに）。",
+                "紙やすり（#120程度）で仕上げるとより安全。",
+                "防護手袋・保護メガネを着用して作業すること。",
+            ],
+        },
+        {
+            "title": "③ 垂木ブロックでパイプ両端を挟み込み、ビスで固定する",
+            "icon": "🪵",
+            "svg": _svg_step3_clamp,
+            "desc": (
+                "側面の木材フレームに**垂木ブロックをパイプの両側に配置**し、"
+                "パイプを挟み込む形でビス固定します。"
+                "切り込み加工は不要です。"
+                "**ポイントはパイプを固定し、竹はパイプの周りを自由に回転できる状態にすること**です。"
+                "竹はパイプに対してフリーに回転（ローラー）するため、"
+                "ブロックが固定するのはパイプであり、竹ではありません。"
+                "ブロックの高さはパイプ径と同程度が目安で、フレームにしっかり固定されることで"
+                "パイプがずれず安定したローラー面になります。"
+            ),
+            "points": [
+                "垂木ブロックはパイプの左右（竹の外側）に密着させてフレームにビス固定する。",
+                "竹はパイプを軸に自由に回転できる状態を保つ（竹を直接固定しない）。",
+                "ブロックの高さの目安はパイプ径（竹の直径）と同程度。",
+                "ビスは下穴を空けてから打つと木材が割れにくい。",
+                "ブロック間隔（パイプ中心間距離）はパイプ径の1.0〜1.2倍程度が適切。",
+                "ビスはコーススレッド65mm以上を使用し、各ブロック2本以上打つ。",
+            ],
+        },
+        {
+            "title": "④ 竹の節をハンマーや棒で叩いて抜く",
+            "icon": "🔨",
+            "svg": _svg_step4_node,
+            "desc": (
+                "竹の内部には節（ふし）があるため、パイプを通す前に除去します。"
+                "竹を作業台に固定してから、太い棒やハンマーで端から叩くと節が抜けます。"
+                "**必ず保護具を着用して作業してください。**"
+            ),
+            "points": [
+                "🧤 防護手袋・🥽 保護メガネ・👟 安全靴（または厚底靴）を必ず着用。",
+                "竹は作業台またはクランプでしっかり固定してから叩く。",
+                "節の破片が鋭利なため、周囲に人が立ち入らないよう注意する。",
+                "節を除去後、内腔をヤスリで軽く整えるとパイプが通しやすい。",
+            ],
+        },
+        {
+            "title": "⑤ パイプを通した竹をフレームに並べ、パイプ両端をビスで固定する",
+            "icon": "🎋",
+            "svg": _svg_step5_roller,
+            "desc": (
+                "節を除去した竹にパイプを通し、フレームの垂木ブロックの間に並べます。"
+                "**パイプは竹の両端より長く、両端が垂木ブロックに届く長さ**にします。"
+                "垂木ブロックでパイプ両端を挟んでビスで締め付けることでパイプが固定され、"
+                "竹はパイプを軸に自由に回転（ローラー動作）します。"
+                "竹同士の隙間は指（約12mm）が入らない程度に詰めてください。"
+            ),
+            "points": [
+                "パイプは竹の両端から20〜30mm以上飛び出した長さにする（垂木ブロックで固定するため）。",
+                "竹はパイプに対してフリーに回転できる状態であることを確認する。",
+                "竹を並べたら垂木ブロックのビスを本締めしてパイプを固定する。",
+                "竹同士の隙間が12mm以上になる場合は詰め竹（小径竹）で埋める。",
+                "竹の向きは太い方（根元側）を揃えると見た目が整う。",
+            ],
+        },
+        {
+            "title": "⑥ 手すり用の竹を斜面に沿って取り付ける",
+            "icon": "🖐️",
+            "svg": _svg_step6_handrail_v2,
+            "desc": (
+                "ローラー面が完成したら、両側に手すり竹を取り付けます。\n\n"
+                "**固定手順：**\n"
+                "① まず竹に**ドリルで貫通穴をあける**（ビットは使用するビスより細いサイズ）。\n"
+                "② 貫通穴を通して**竹と木材の設置面に長ビスを打ち込み**固定する。\n\n"
+                "手すりの高さはローラー面から15〜20cm上が目安です。"
+            ),
+            "points": [
+                "ドリルで先に竹に貫通穴をあけてから、長ビス（コーススレッド90mm以上）で固定。",
+                "ビスは竹の貫通穴を通り、木材設置面に確実に打ち込まれているか確認する。",
+                "手すりは斜面に沿って平行に設置し、両端をしっかり固定する。",
+                "手すりを強く押しても動かないことを確認してから使用を開始する。",
+            ],
+        },
+        {
+            "title": "⑦ 支柱を組み、地面に固定する",
+            "icon": "📐",
+            "svg": _svg_step7_slope,
+            "desc": (
+                "支柱の地面固定は**転倒防止の最重要工程**です。"
+                "竹遊具は一時設置・撤去を前提とするため、以下の2案から設置場所の状況に応じて選択してください。\n\n"
+                "---\n\n"
+                "**【案①】単管パイプ打ち込み式（最推奨・固定力が高い）**\n\n"
+                "支柱固定用の単管パイプ（φ48.6mm）をパイプハンマーで地面に**50cm以上**打ち込み、"
+                "直交クランプで木製支柱と連結します。"
+                "ホームセンターで全材料が揃い、撤去時はパイプを引き抜くだけで復元できます。"
+                "固定力は最も高く、一時設置として最も安全な方法です。\n\n"
+                "---\n\n"
+                "**【案②】ウォーターウェイト式（平坦・硬い地面限定）**\n\n"
+                "市販のウォーターウェイト（イベント用テント固定用）や大型ポリタンク（20L以上）に水を満タンに入れ、"
+                "支柱ベースにロープ・ベルトでしっかり固定します。"
+                "1基あたり**最低20kg以上**の重量を確保してください。"
+                "ただし案①より固定力が劣るため、**平坦で硬い地面・風が弱い日・大人が必ず付き添う条件**でのみ使用してください。\n\n"
+                "---\n\n"
+                "支柱と斜面フレームの間には必ず**筋交い（ブレース）**を入れて横揺れを防いでください。"
+                "傾斜角度は**35°以下**に設定します。"
+            ),
+            "points": [
+                "【案①】単管パイプはφ48.6mm・長さ1〜1.5mを使用し、50cm以上打ち込む。地面が軟らかい場合は60cm以上。",
+                "【案①】直交クランプ（ホームセンターで入手可）で支柱と単管を2箇所以上連結する。",
+                "【案②】ウォーターウェイトは1基あたり20kg以上。支柱1本に対して両側に配置するとより安全。",
+                "【案②】ポリタンクを使う場合は転倒しないよう支柱にしっかりロープで縛り付ける。",
+                "【案②共通注意】傾斜地・軟弱地盤・強風時は案②を使用しない。必ず案①にする。",
+                "【両案共通】筋交い（ブレース）は必ず設ける。斜め45°程度が効果的。",
+                "【両案共通】設置後に支柱を大人が全力で揺らし、動かないことを必ず確認してから使用を開始する。",
+                "【両案共通】使用中は必ず大人が付き添い、強風・雨天時は使用を中止する。",
+                "【両案共通】使用のたびに固定状態を目視・手動で確認する（緩み・傾きがないか）。",
+            ],
+        },
+        {
+            "title": "⑧ 全体を組み上げ、使用前安全点検を行う",
+            "icon": "🎉",
+            "svg": _svg_step8_complete,
+            "desc": (
+                "フレームを支柱に固定してすべてのパーツを組み上げたら完成です。"
+                "**使用前に必ずチェックリストで安全点検を行い、"
+                "大人が試乗して安全を確認してから使用を開始してください。**"
+                "月1回以上の定期点検を習慣にしましょう。"
+            ),
+            "points": [
+                "【使用前点検】ガタつき・竹の割れ・ビス緩み・突起・バリがないか確認。",
+                "【使用前点検】支柱・手すりを強く押してぐらつきがないか確認。",
+                "【使用前点検】必ず大人が先に試乗して安全を確かめる。",
+                "【定期点検（月1回）】竹の劣化・虫食い・腐れ・接合部の緩みを確認。",
+                "異常を発見したら即座に使用を禁止し、修理または撤去する。",
+                "雨ざらしは竹の劣化を早めるため、使用後はシートで覆うか屋根下に保管する。",
+            ],
+        },
+    ]
+
+    for step in steps:
+        with st.expander(f"{step['icon']} {step['title']}", expanded=False):
+            col_img, col_text = st.columns([1, 1])
+            with col_img:
+                st.markdown(step["svg"](), unsafe_allow_html=True)
+            with col_text:
+                st.markdown(step["desc"])
+                st.markdown("**📌 ポイント：**")
+                for pt in step["points"]:
+                    st.markdown(f"- {pt}")
+
+    # ── 乾燥竹の判定基準 ──
+    st.divider()
+    with st.expander("🌿 乾燥竹の判定基準（使用可否チェック）", expanded=False):
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.markdown("""
+**✅ 使用してよい竹の目安**
+- 切り出しから **2〜3ヶ月以上** 経過している
+- 表面の色が **薄い黄緑〜黄褐色** に変化している
+- 竹を叩くと **高く乾いた音** がする
+- 断面に **光沢があり**、水分が出てこない
+- 節が密で（節間30cm以下）、**肉厚** がある
+- 割れ・虫食い・カビが **ない**
+""")
+        with col_b:
+            st.markdown("""
+**❌ 使用してはいけない竹**
+- 切り出してから **1ヶ月未満** の生竹（強度30%低下）
+- 表面に **縦割れ** が入っている
+- 叩くと **鈍く低い音** がする（水分残存）
+- 虫食い穴・カビ・腐れがある
+- 肉薄で節の間隔が広すぎる（40cm以上）
+- 強く押すと **たわみ** を感じる
+
+⚠️ 生竹は乾燥竹に比べ強度が **約30%低下** します。
+""")
+        st.info(
+            "💡 **簡易判定法：** 竹の切り口を指で触って湿っている場合は生竹です。"
+            "乾燥が十分な竹は切り口が乾いており、触っても水分を感じません。"
+        )
+
+    st.info(
+        "💡 **材料の確認（竹の直径によって変わります）**\n\n"
+        f"現在の設定：竹の直径 **{diameter_cm:.1f}cm**。"
+        "「図面を作る」ボタンで横材の本数・長さ・手すり竹の長さを確認してください。\n\n"
+        "パイプは **材料リストの「滑り面横材」の長さ × 同本数** 用意してください。"
+    )
+
+
 def main():
     st.set_page_config(page_title="竹あそび", layout="wide")
     st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
@@ -1108,7 +1844,16 @@ def main():
         bamboo_kind = st.selectbox("竹の種類", list(BAMBOO_SPECS.keys()))
         spec = BAMBOO_SPECS[bamboo_kind]
         st.caption(f"ℹ️ {spec['note']}"
-                   f"　E = {spec['E']/1e9:.0f} GPa　許容応力 = {spec['sigma']/1e6:.0f} MPa")
+                   f"　E = {spec['E']/1e9:.0f} GPa　基準許容応力 = {spec['sigma']/1e6:.0f} MPa")
+
+        # 竹の状態選択（経年劣化・損傷による強度係数）
+        bamboo_condition = st.selectbox(
+            "竹の状態",
+            list(BAMBOO_CONDITION_FACTORS.keys()),
+            help="目視で確認した竹の状態を選択してください。割れ・虫食いがある場合は使用禁止です。"
+        )
+        cond_factor = BAMBOO_CONDITION_FACTORS[bamboo_condition]
+        st.caption(f"ℹ️ {BAMBOO_CONDITION_NOTES[bamboo_condition]}")
 
         diameter = st.number_input("竹の直径 (cm)", value=8.0, min_value=2.0, max_value=20.0, step=0.5)
         height   = st.number_input("高さ (m)",      value=1.2, min_value=0.3, max_value=3.0,  step=0.1)
@@ -1129,6 +1874,29 @@ def main():
             diameter_m=diameter / 100,
         )
 
+        # ── 竹の状態チェック：使用禁止ならここで停止 ──
+        if cond_factor is None:
+            st.error("🚫 **使用禁止：竹に致命的な欠陥があります**")
+            st.error(
+                "選択された状態「割れあり / 虫食いあり」の竹は計算の余地なく使用禁止です。"
+                "直ちに新しい竹に交換してください。計算を続行できません。"
+            )
+            st.stop()
+
+        # ── 実効許容応力の計算（安全率 × 状態係数）──
+        # 実効許容応力 = 基準許容応力 ÷ 安全率 × 状態係数
+        # ÷ではなく × (1/安全率) とし、状態係数で追加割引する。
+        effective_sigma = spec["sigma"] / STRUCTURAL_SAFETY_FACTOR * cond_factor
+        effective_sigma_mpa = effective_sigma / 1e6
+
+        st.info(
+            f"🔢 **実効許容応力の計算**  "
+            f"基準 {spec['sigma']/1e6:.0f} MPa"
+            f" ÷ 安全率 {STRUCTURAL_SAFETY_FACTOR:.1f}"
+            f" × 状態係数 {cond_factor:.1f}"
+            f" = **{effective_sigma_mpa:.2f} MPa**"
+        )
+
         # ── 入力バリデーション ──
         errors = plugin.validate(dims, float(weight))
         if errors:
@@ -1140,7 +1908,7 @@ def main():
         try:
             messages, danger = plugin.safety_check(
                 dims, float(weight),
-                allowable_stress=spec["sigma"],
+                allowable_stress=effective_sigma,
                 bamboo_e=spec["E"],
             )
         except Exception as e:
@@ -1165,6 +1933,11 @@ def main():
             st.markdown(svg_side, unsafe_allow_html=True)
         with col2:
             st.markdown(svg_top, unsafe_allow_html=True)
+
+        # ── 製作手順ガイド（滑り台のみ）──
+        if tool_name == "滑り台":
+            st.divider()
+            render_slide_construction_guide(diameter)
 
         st.divider()
         st.subheader(f"🎋 直径 {diameter}cm の竹　材料リスト")
