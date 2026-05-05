@@ -2387,6 +2387,390 @@ def render_swing_construction_guide(diameter_cm: float):
     )
 
 
+# ══════════════════════════════════════════════════════════════════
+# ジャングルジム製作手順ガイド用 SVG イラスト
+# ══════════════════════════════════════════════════════════════════
+
+
+# ══════════════════════════════════════════════════════════════════
+# ジャングルジム製作手順ガイド用 SVG イラスト（写真に忠実・改訂版）
+# ══════════════════════════════════════════════════════════════════
+
+def _svg_jg_step1_hexagon() -> str:
+    """1 hexagon base + 6 pillars converging to apex (tipi style)"""
+    import math as _m
+    cx, cy_g, R = 180, 205, 82
+    def hp(i):
+        a = _m.radians(90 + 60*i)
+        return cx + R*_m.cos(a), cy_g - R*_m.sin(a)*0.38
+    pts = [hp(i) for i in range(6)]
+    apex = (180, 44)
+    do = [3,4,5,0,1,2]
+    gh = "".join(
+        f'<line x1="{pts[i][0]:.1f}" y1="{pts[i][1]:.1f}"'
+        f' x2="{pts[(i+1)%6][0]:.1f}" y2="{pts[(i+1)%6][1]:.1f}"'
+        f' stroke="#4caf50" stroke-width="13" stroke-linecap="round" opacity="0.92"/>'
+        for i in do)
+    ops = [0.52,0.60,0.70,0.80,0.90,0.99]
+    pl = "".join(
+        f'<line x1="{pts[i][0]:.1f}" y1="{pts[i][1]:.1f}"'
+        f' x2="{apex[0]}" y2="{apex[1]}"'
+        f' stroke="#2e7d32" stroke-width="11" stroke-linecap="round" opacity="{ops[j]}"/>'
+        for j,i in enumerate(do))
+    lb = "".join(
+        f'<circle cx="{pts[i][0]:.1f}" cy="{pts[i][1]:.1f}" r="14"'
+        f' fill="#4caf50" stroke="#1b5e20" stroke-width="2"/>'
+        f'<text x="{pts[i][0]:.1f}" y="{pts[i][1]+4:.1f}" text-anchor="middle"'
+        f' font-size="9" fill="white" font-weight="bold" font-family="sans-serif">{i+1}</text>'
+        for i in range(6))
+    return f'''<svg viewBox="0 0 360 262" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:360px;height:auto;">
+  <text x="180" y="16" text-anchor="middle" font-size="11" font-weight="bold" fill="#2d6a2d" font-family="sans-serif">竹を六角形に配置し支柱6本を頂点で結束</text>
+  <rect x="0" y="228" width="360" height="34" fill="#d7ccc8"/>
+  <line x1="0" y1="228" x2="360" y2="228" stroke="#795548" stroke-width="2"/>
+  {gh}
+  {pl}
+  {lb}
+  <circle cx="{apex[0]}" cy="{apex[1]}" r="18" fill="#BA7517" stroke="#8B4513" stroke-width="2.5"/>
+  <text x="{apex[0]}" y="{apex[1]-3}" text-anchor="middle" font-size="8" fill="white" font-weight="bold" font-family="sans-serif">上部</text>
+  <text x="{apex[0]}" y="{apex[1]+8}" text-anchor="middle" font-size="8" fill="white" font-weight="bold" font-family="sans-serif">結束</text>
+  <rect x="170" y="90" width="20" height="138" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5" opacity="0.80"/>
+  <line x1="170" y1="108" x2="190" y2="108" stroke="#5d4037" stroke-width="2.5"/>
+  <line x1="170" y1="126" x2="190" y2="126" stroke="#5d4037" stroke-width="2.5"/>
+  <line x1="170" y1="144" x2="190" y2="144" stroke="#5d4037" stroke-width="2.5"/>
+  <line x1="170" y1="162" x2="190" y2="162" stroke="#5d4037" stroke-width="2.5"/>
+  <line x1="170" y1="180" x2="190" y2="180" stroke="#5d4037" stroke-width="2.5"/>
+  <line x1="170" y1="198" x2="190" y2="198" stroke="#5d4037" stroke-width="2.5"/>
+  <text x="198" y="152" font-size="8" fill="#5d4037" font-weight="bold" font-family="sans-serif">はしご</text>
+  <text x="198" y="163" font-size="7.5" fill="#5d4037" font-family="sans-serif">中央に設置</text>
+  <text x="198" y="173" font-size="7.5" fill="#5d4037" font-family="sans-serif">上部作業が楽！</text>
+  <rect x="4" y="233" width="352" height="24" rx="4" fill="#e8f5e9" stroke="#388e3c" stroke-width="1.2"/>
+  <text x="180" y="245" text-anchor="middle" font-size="8" fill="#1b5e20" font-weight="bold" font-family="sans-serif">支柱6本を角に配置。まとめて頂点でロープを5回以上巻き結束</text>
+  <text x="180" y="256" text-anchor="middle" font-size="8" fill="#37474f" font-family="sans-serif">60度間隔で均等に広がっているか確認する</text>
+</svg>'''
+
+
+def _svg_jg_step2_tier1() -> str:
+    """2 tier1: 12 knots, diagonal placement"""
+    import math as _m
+    cx, cy_g, R = 180, 202, 78
+    def hp(i):
+        a = _m.radians(90 + 60*i)
+        return cx + R*_m.cos(a), cy_g - R*_m.sin(a)*0.38
+    pts = [hp(i) for i in range(6)]
+    apex = (180, 44)
+    do = [3,4,5,0,1,2]
+    ops2 = [0.52,0.60,0.70,0.80,0.90,0.99]
+    pl = "".join(
+        f'<line x1="{pts[i][0]:.1f}" y1="{pts[i][1]:.1f}"'
+        f' x2="{apex[0]}" y2="{apex[1]}"'
+        f' stroke="#2e7d32" stroke-width="10" stroke-linecap="round" opacity="{ops2[j]*0.5:.2f}"/>'
+        for j,i in enumerate(do))
+    t1 = ""
+    k1 = ""
+    for j,i in enumerate(do):
+        x1,y1 = pts[i]; x2,y2 = pts[(i+1)%6]
+        off = j * 4
+        y1t = y1 - 36 - off; y2t = y2 - 40 - off
+        t1 += (f'<line x1="{x1:.1f}" y1="{y1t:.1f}" x2="{x2:.1f}" y2="{y2t:.1f}"'
+               f' stroke="#4caf50" stroke-width="10" stroke-linecap="round" opacity="0.95"/>')
+        k1 += (f'<circle cx="{x1:.1f}" cy="{y1t:.1f}" r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.92"/>'
+               f'<text x="{x1:.1f}" y="{y1t+3:.1f}" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>'
+               f'<circle cx="{x2:.1f}" cy="{y2t:.1f}" r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.92"/>'
+               f'<text x="{x2:.1f}" y="{y2t+3:.1f}" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>')
+    return f'''<svg viewBox="0 0 360 272" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:360px;height:auto;">
+  <text x="180" y="16" text-anchor="middle" font-size="11" font-weight="bold" fill="#2d6a2d" font-family="sans-serif">1段目：斜め配置で各支柱2箇所ずつ計12箇所結束</text>
+  <text x="85" y="34" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">斜め設置のしくみ（側面）</text>
+  <line x1="28"  y1="218" x2="72"  y2="52" stroke="#2e7d32" stroke-width="9" stroke-linecap="round"/>
+  <line x1="152" y1="218" x2="108" y2="52" stroke="#2e7d32" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="90" cy="50" r="11" fill="#BA7517" stroke="#8B4513" stroke-width="2"/>
+  <line x1="20" y1="158" x2="158" y2="136" stroke="#4caf50" stroke-width="11" stroke-linecap="round"/>
+  <circle cx="28"  cy="158" r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.9"/>
+  <text x="28"  y="162" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>
+  <circle cx="152" cy="136" r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.9"/>
+  <text x="152" y="140" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>
+  <line x1="20" y1="112" x2="158" y2="90" stroke="#81c784" stroke-width="11" stroke-linecap="round" opacity="0.78"/>
+  <circle cx="28"  cy="112" r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.9"/>
+  <text x="28"  y="116" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>
+  <circle cx="152" cy="90"  r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.9"/>
+  <text x="152" y="94"  text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>
+  <line x1="10" y1="112" x2="10" y2="158" stroke="#e53935" stroke-width="1.5"/>
+  <line x1="6"  y1="112" x2="14" y2="112" stroke="#e53935" stroke-width="1.5"/>
+  <line x1="6"  y1="158" x2="14" y2="158" stroke="#e53935" stroke-width="1.5"/>
+  <text x="6" y="138" text-anchor="middle" font-size="7" fill="#c62828" font-family="sans-serif" transform="rotate(-90,6,138)">竹径分</text>
+  <rect x="6" y="228" width="160" height="36" rx="4" fill="#fff8e1" stroke="#f57f17" stroke-width="1.2"/>
+  <text x="86" y="242" text-anchor="middle" font-size="8" fill="#e65100" font-weight="bold" font-family="sans-serif">水平でなく竹径分傾ける！</text>
+  <text x="86" y="256" text-anchor="middle" font-size="8" fill="#37474f" font-family="sans-serif">1周すると同じ高さに揃う</text>
+  <text x="272" y="34" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">斜視図（1段目の状態）</text>
+  <rect x="172" y="228" width="182" height="30" fill="#d7ccc8"/>
+  <line x1="172" y1="228" x2="354" y2="228" stroke="#795548" stroke-width="2"/>
+  {pl}
+  <circle cx="{apex[0]}" cy="{apex[1]}" r="14" fill="#BA7517" stroke="#8B4513" stroke-width="2"/>
+  <text x="{apex[0]}" y="{apex[1]+4}" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結束</text>
+  {t1}
+  {k1}
+  <rect x="176" y="238" width="172" height="18" rx="3" fill="#e8f5e9" stroke="#388e3c" stroke-width="1"/>
+  <text x="262" y="251" text-anchor="middle" font-size="8" fill="#1b5e20" font-weight="bold" font-family="sans-serif">結束12箇所　麻紐3〜4m/1箇所</text>
+</svg>'''
+
+
+def _svg_jg_step3_tier2() -> str:
+    """3 tier2 added: 24 knots total"""
+    import math as _m
+    cx, cy_g, R = 180, 202, 76
+    def hp(i):
+        a = _m.radians(90 + 60*i)
+        return cx + R*_m.cos(a), cy_g - R*_m.sin(a)*0.38
+    pts = [hp(i) for i in range(6)]
+    apex = (180, 44)
+    do = [3,4,5,0,1,2]
+    ops3 = [0.28,0.33,0.38,0.44,0.50,0.56]
+    pl = "".join(
+        f'<line x1="{pts[i][0]:.1f}" y1="{pts[i][1]:.1f}"'
+        f' x2="{apex[0]}" y2="{apex[1]}"'
+        f' stroke="#2e7d32" stroke-width="10" stroke-linecap="round" opacity="{ops3[j]}"/>'
+        for j,i in enumerate(do))
+    def make_tier(y_off, color, kcolor):
+        seg = ""; kn = ""
+        for j,i in enumerate(do):
+            x1,y1 = pts[i]; x2,y2 = pts[(i+1)%6]
+            off = j*4
+            y1t = y1 - y_off - off; y2t = y2 - y_off - 4 - off
+            seg += (f'<line x1="{x1:.1f}" y1="{y1t:.1f}" x2="{x2:.1f}" y2="{y2t:.1f}"'
+                    f' stroke="{color}" stroke-width="10" stroke-linecap="round" opacity="0.92"/>')
+            kn  += (f'<circle cx="{x1:.1f}" cy="{y1t:.1f}" r="8" fill="{kcolor}" stroke="#b71c1c" stroke-width="1.4" opacity="0.92"/>'
+                    f'<text x="{x1:.1f}" y="{y1t+3:.1f}" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>'
+                    f'<circle cx="{x2:.1f}" cy="{y2t:.1f}" r="8" fill="{kcolor}" stroke="#b71c1c" stroke-width="1.4" opacity="0.92"/>'
+                    f'<text x="{x2:.1f}" y="{y2t+3:.1f}" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>')
+        return seg, kn
+    t1, k1 = make_tier(36, "#4caf50", "#e53935")
+    t2, k2 = make_tier(90, "#81c784", "#f57f17")
+    return f'''<svg viewBox="0 0 360 278" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:360px;height:auto;">
+  <text x="180" y="16" text-anchor="middle" font-size="11" font-weight="bold" fill="#2d6a2d" font-family="sans-serif">2段目を設置して完成！（合計24箇所結束）</text>
+  <rect x="0" y="232" width="360" height="34" fill="#d7ccc8"/>
+  <line x1="0" y1="232" x2="360" y2="232" stroke="#795548" stroke-width="2"/>
+  {pl}
+  <circle cx="{apex[0]}" cy="{apex[1]}" r="15" fill="#BA7517" stroke="#8B4513" stroke-width="2.5"/>
+  <text x="{apex[0]}" y="{apex[1]+4}" text-anchor="middle" font-size="8" fill="white" font-weight="bold" font-family="sans-serif">結束</text>
+  {t1}
+  {k1}
+  {t2}
+  {k2}
+  <text x="12"  y="195" font-size="9" fill="#c62828" font-weight="bold" font-family="sans-serif">1段目</text>
+  <text x="12"  y="145" font-size="9" fill="#e65100" font-weight="bold" font-family="sans-serif">2段目</text>
+  <rect x="240" y="236" width="114" height="38" rx="4" fill="#f9fbe7" stroke="#aed581" stroke-width="1.2"/>
+  <circle cx="252" cy="248" r="7" fill="#e53935" stroke="#b71c1c" stroke-width="1.2"/>
+  <text x="264" y="251" font-size="8" fill="#c62828" font-family="sans-serif">1段目結束×12</text>
+  <circle cx="252" cy="265" r="7" fill="#f57f17" stroke="#e65100" stroke-width="1.2"/>
+  <text x="264" y="268" font-size="8" fill="#e65100" font-family="sans-serif">2段目結束×12</text>
+  <text x="118" y="252" text-anchor="middle" font-size="9" fill="#e65100" font-weight="bold" font-family="sans-serif">合計24箇所結束</text>
+  <text x="118" y="266" text-anchor="middle" font-size="8" fill="#37474f" font-family="sans-serif">麻紐3〜4m x 24箇所使用</text>
+</svg>'''
+
+
+def _svg_jg_step4_complete() -> str:
+    """4 complete view with child climbing and adult watching"""
+    import math as _m
+    cx, cy_g, R = 180, 202, 76
+    def hp(i):
+        a = _m.radians(90 + 60*i)
+        return cx + R*_m.cos(a), cy_g - R*_m.sin(a)*0.38
+    pts = [hp(i) for i in range(6)]
+    apex = (180, 44)
+    do = [3,4,5,0,1,2]
+    ops4 = [0.28,0.33,0.38,0.44,0.50,0.56]
+    pl = "".join(
+        f'<line x1="{pts[i][0]:.1f}" y1="{pts[i][1]:.1f}"'
+        f' x2="{apex[0]}" y2="{apex[1]}"'
+        f' stroke="#2e7d32" stroke-width="10" stroke-linecap="round" opacity="{ops4[j]}"/>'
+        for j,i in enumerate(do))
+    t1 = "".join(
+        f'<line x1="{pts[i][0]:.1f}" y1="{pts[i][1]-36-j*4:.1f}"'
+        f' x2="{pts[(i+1)%6][0]:.1f}" y2="{pts[(i+1)%6][1]-40-j*4:.1f}"'
+        f' stroke="#4caf50" stroke-width="10" stroke-linecap="round" opacity="0.92"/>'
+        for j,i in enumerate(do))
+    t2 = "".join(
+        f'<line x1="{pts[i][0]:.1f}" y1="{pts[i][1]-88-j*4:.1f}"'
+        f' x2="{pts[(i+1)%6][0]:.1f}" y2="{pts[(i+1)%6][1]-92-j*4:.1f}"'
+        f' stroke="#a5d6a7" stroke-width="10" stroke-linecap="round" opacity="0.94"/>'
+        for j,i in enumerate(do))
+    return f'''<svg viewBox="0 0 360 275" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:360px;height:auto;">
+  <text x="180" y="16" text-anchor="middle" font-size="11" font-weight="bold" fill="#2d6a2d" font-family="sans-serif">完成！使用前に必ず安全点検を実施</text>
+  <rect x="0" y="232" width="360" height="43" fill="#d7ccc8"/>
+  <line x1="0" y1="232" x2="360" y2="232" stroke="#795548" stroke-width="2"/>
+  {pl}
+  <circle cx="{apex[0]}" cy="{apex[1]}" r="17" fill="#BA7517" stroke="#8B4513" stroke-width="2.5"/>
+  <text x="{apex[0]}" y="{apex[1]+4}" text-anchor="middle" font-size="8" fill="white" font-weight="bold" font-family="sans-serif">結束</text>
+  {t1}
+  {t2}
+  <circle cx="198" cy="120" r="10" fill="#FFCC80" stroke="#8d6e63" stroke-width="1.5"/>
+  <line x1="198" y1="130" x2="198" y2="160" stroke="#1565c0" stroke-width="4" stroke-linecap="round"/>
+  <line x1="198" y1="140" x2="184" y2="132" stroke="#1565c0" stroke-width="3" stroke-linecap="round"/>
+  <line x1="198" y1="140" x2="212" y2="134" stroke="#1565c0" stroke-width="3" stroke-linecap="round"/>
+  <line x1="198" y1="160" x2="190" y2="180" stroke="#1565c0" stroke-width="3" stroke-linecap="round"/>
+  <line x1="198" y1="160" x2="206" y2="180" stroke="#1565c0" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="316" cy="185" r="10" fill="#FFCC80" stroke="#8d6e63" stroke-width="1.5"/>
+  <line x1="316" y1="195" x2="316" y2="222" stroke="#6a1b9a" stroke-width="4" stroke-linecap="round"/>
+  <line x1="316" y1="205" x2="302" y2="199" stroke="#6a1b9a" stroke-width="3" stroke-linecap="round"/>
+  <line x1="316" y1="205" x2="328" y2="199" stroke="#6a1b9a" stroke-width="3" stroke-linecap="round"/>
+  <line x1="316" y1="222" x2="308" y2="238" stroke="#6a1b9a" stroke-width="3" stroke-linecap="round"/>
+  <line x1="316" y1="222" x2="324" y2="238" stroke="#6a1b9a" stroke-width="3" stroke-linecap="round"/>
+  <text x="316" y="177" text-anchor="middle" font-size="8" fill="#4a148c" font-family="sans-serif">見守り必須</text>
+  <text x="16" y="248" font-size="16" fill="#2e7d32" font-family="sans-serif">&#x2713;</text>
+  <text x="34" y="252" font-size="8.5" fill="#1b5e20" font-weight="bold" font-family="sans-serif">全24箇所の結束の緩みなし</text>
+  <text x="16" y="267" font-size="16" fill="#2e7d32" font-family="sans-serif">&#x2713;</text>
+  <text x="34" y="270" font-size="8.5" fill="#1b5e20" font-weight="bold" font-family="sans-serif">竹の割れ・虫食いなし。大人が全体を揺らして確認</text>
+</svg>'''
+
+def render_junglegym_construction_guide(diameter_cm: float):
+    """
+    ジャングルジムの製作手順ガイドを表示する。
+    diameter_cm: サイドバーで設定した竹の直径（cm）。
+    """
+    st.subheader("🔨 竹ジャングルジム　製作手順ガイド")
+
+    st.warning(
+        "⚠️ **製作前に必ずお読みください**\n\n"
+        "このガイドは竹製ジャングルジムの一般的な製作手順を示すものです。"
+        "竹は天然材料のため個体差が大きく、本ガイド通りに製作しても安全を保証するものではありません。"
+        "**製作・設置・使用前に、必ず建築士・構造専門家による安全確認を受けてください。**\n\n"
+        "子どもが高所に登る遊具です。**必ず大人が付き添い、子どもだけで使用させないでください。**"
+    )
+
+    steps = [
+        {
+            "title": "① 竹を六角形に置き、支柱6本を上部で結束する",
+            "icon": "⬡",
+            "svg": _svg_jg_step1_hexagon,
+            "desc": (
+                "まず地面に竹を**六角形**になるように6本配置します。"
+                "その**6つの角（頂点）に支柱となる竹を1本ずつ立て**、"
+                "上部（頂点）でほどけないようにしっかりと結束します。\n\n"
+                "上部の結束作業は高所になるため、**中央にはしごや脚立を置く**と安全で作業しやすくなります。"
+                "支柱6本が均等な角度で広がるよう調整してください。"
+            ),
+            "points": [
+                "六角形の一辺の長さを揃えて地面に配置する（目安：使用者が登りやすい幅）。",
+                "支柱6本の上部はまとめてロープで5回以上巻き、しっかり結束する。",
+                "はしご・脚立を中央に置くと上部作業が安全にできる。",
+                "支柱が均等な角度（約60°間隔）で広がっているか確認する。",
+                "結束後、全力で揺らして頂点がずれないか確認する。",
+                "割れ・虫食いのない乾燥竹（直径8cm以上）を使用すること。",
+            ],
+        },
+        {
+            "title": "② 1段目：横竹を斜めに配置し、各支柱に2箇所ずつ結束（計12箇所）",
+            "icon": "1️⃣",
+            "svg": _svg_jg_step2_tier1,
+            "desc": (
+                "地面の6本の竹を使って1段目を作ります。"
+                "横竹は**水平ではなく竹の直径分だけ斜め**に傾けて設置します。\n\n"
+                "こうすることで六角形を1周したとき、"
+                "**各ステップが同じ高さ**に揃い、登りやすくなります。\n\n"
+                "横竹は各支柱と交差する点（辺の両端）で結束します。"
+                "**1支柱につき2箇所 × 6支柱 ＝ 計12箇所**を結束してください。"
+                "1箇所あたり麻紐（またはロープ）を**3〜4m**使用します。"
+            ),
+            "points": [
+                "横竹は水平ではなく竹径分だけ斜め（約5〜10°傾斜）に設置する。",
+                "1箇所あたり麻紐3〜4mをしっかり巻きつけて結ぶ。",
+                "「本結び」や「巻き結び」などほどけにくい結び方を使用する。",
+                "1支柱あたり2箇所（辺の両端）、6支柱で計12箇所結束する。",
+                "結束後に全結束点を引っ張り、緩みがないか確認する。",
+                "麻紐は天然素材で劣化しやすいため、ポリエステルロープ併用も検討する。",
+            ],
+        },
+        {
+            "title": "③ 2段目：さらに上の段に同様に横竹を設置（計24箇所）",
+            "icon": "2️⃣",
+            "svg": _svg_jg_step3_tier2,
+            "desc": (
+                "1段目と同様の要領で、**さらに上の位置に2段目**の横竹を設置します。\n\n"
+                "2段目も同じく竹径分だけ斜めに傾けて配置し、"
+                "各支柱に2箇所ずつ結束します。\n\n"
+                "2段目の結束12箇所を加えると**合計24箇所の結束**となります。"
+                "全ての結束点をしっかり固定して完成です。"
+            ),
+            "points": [
+                "2段目の高さは子どもが安全に登れる高さに設定する（目安：1段目から40〜50cm上）。",
+                "2段目も竹径分だけ斜め設置を忘れずに（1段目と同じ方向に傾ける）。",
+                "1支柱あたり2箇所 × 6支柱 ＝ 12箇所追加結束する。",
+                "1段目・2段目合わせて計24箇所全ての結束を確認する。",
+                "全結束点を使用前に必ず手で引いて緩みがないか点検する。",
+                "2段目上端の高さが1.2mを超える場合は転落リスクが高まるため注意する。",
+            ],
+        },
+        {
+            "title": "④ 完成・使用前安全点検",
+            "icon": "🎉",
+            "svg": _svg_jg_step4_complete,
+            "desc": (
+                "全ての結束が完了したら完成です。\n\n"
+                "**使用前に必ず大人が全体を点検し、安全を確認**してから使用を開始してください。"
+                "月1回以上の定期点検を習慣にしましょう。\n\n"
+                "使用中は**必ず大人が付き添い**、子どもだけで使用させないでください。"
+            ),
+            "points": [
+                "【使用前点検】頂点の結束・全24箇所の結束の緩みがないか確認する。",
+                "【使用前点検】竹の割れ・虫食い・腐れがないか目視確認する。",
+                "【使用前点検】大人が全体を揺らしてぐらつきがないか確認する。",
+                "【使用前点検】突起・バリ・割れ端など怪我につながる箇所がないか確認する。",
+                "【使用中】必ず大人が付き添う。複数の子どもが同時に登る場合は特に注意する。",
+                "【月1回】竹の劣化・虫食い・結束の緩みを定期点検する。",
+                "異常を発見したら即座に使用禁止にし、修理または撤去する。",
+                "雨ざらしは竹の劣化を早める。使用後はシートで覆うか屋根下に保管する。",
+            ],
+        },
+    ]
+
+    import base64
+
+    def _render_svg(svg_str: str):
+        b64 = base64.b64encode(svg_str.encode("utf-8")).decode("utf-8")
+        st.markdown(
+            f'<img src="data:image/svg+xml;base64,{b64}" '
+            f'style="width:100%;max-width:400px;height:auto;display:block;" />',
+            unsafe_allow_html=True,
+        )
+
+    for step in steps:
+        with st.expander(f"{step['icon']} {step['title']}", expanded=False):
+            col_img, col_text = st.columns([1, 1])
+            with col_img:
+                _render_svg(step["svg"]())
+            with col_text:
+                st.markdown(step["desc"])
+                st.markdown("**📌 ポイント：**")
+                for pt in step["points"]:
+                    st.markdown(f"- {pt}")
+
+    # ── 安全点検チェックリスト ──
+    st.divider()
+    with st.expander("🔴 安全点検チェックリスト（使用前・月1回必須）", expanded=False):
+        st.markdown(f"""
+**✅ 使用前の点検（毎回実施）**
+- ❶ 頂点の結束ロープがほどけていない
+- ❷ 1段目・2段目 計24箇所の結束に緩みがない
+- ❸ 竹に新しい割れ・虫食いがない
+- ❹ 支柱がぐらつかない（大人が揺らして確認）
+- ❺ 突起・バリ・割れ端など怪我につながる箇所がない
+- ❻ 大人が付き添える状況である
+
+**🚫 こんなときは使用禁止**
+- 竹に縦割れが入っている
+- 結束ロープが緩んでいる・毛羽立っている
+- 支柱がぐらつく
+- 雨天・強風時
+- 大人が付き添えないとき
+""")
+
+    st.info(
+        "💡 **月1回の定期点検**を習慣にしましょう。\n\n"
+        f"現在の設定：竹の直径 **{diameter_cm:.1f}cm**。"
+        "全24箇所の結束・竹の劣化・支柱の固定状態を確認し、"
+        "異常があれば即座に使用禁止にして修理・撤去してください。"
+    )
+
+
 def render_slide_construction_guide(diameter_cm: float):
     """
     滑り台の製作手順ガイドを表示する（全指摘反映・安全設計版）。
@@ -2744,13 +3128,16 @@ def main():
         with col2:
             st.markdown(svg_top, unsafe_allow_html=True)
 
-        # ── 製作手順ガイド（滑り台・ブランコ）──
+        # ── 製作手順ガイド（滑り台・ブランコ・ジャングルジム）──
         if tool_name == "滑り台":
             st.divider()
             render_slide_construction_guide(diameter)
         elif tool_name == "ブランコ":
             st.divider()
             render_swing_construction_guide(diameter)
+        elif tool_name == "ジャングルジム":
+            st.divider()
+            render_junglegym_construction_guide(diameter)
 
         st.divider()
         st.subheader(f"🎋 直径 {diameter}cm の竹　材料リスト")
