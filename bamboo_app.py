@@ -726,21 +726,23 @@ class SlidePlugin(ToolPlugin):
         t2 += dim_v(tx-36, ty, ty+tl, aL)
         svg_top = make_svg(TVW, TVH, t2, f"上面図（横材 {num}本）")
 
-        # パイプ長さ = 滑り台の幅（横材1本分）、本数 = 横材本数と同数
+        # パイプ長さ = 滑り台の幅（端板と同じ）、本数 = 横材本数と同数
         pipe_len_cm = round(W * 100)
-        # 垂木ブロック：横材1本につき左右2個
-        bracket_len_cm = round(Dc * 2)  # 竹径の2倍程度の長さ
+        # 垂木ブロック幅（1個あたり）：竹径程度
+        bracket_w_cm = round(Dc * 2)   # 長さ（奥行き）
+        # 竹の長さ = パイプ長さ - 垂木ブロック幅 × 2（両端の固定代）
+        bamboo_len_cm = pipe_len_cm - bracket_w_cm * 2
         materials = [
-            Material(f"滑り面横材 直径{Dc:.0f}cm",          round(W*100),         num),
+            Material(f"滑り面横材 直径{Dc:.0f}cm",          bamboo_len_cm,        num),
             Material(f"直管パイプ（芯材・φ推奨{max(19,round(Dc*0.27))}mm）",
                      pipe_len_cm, num, is_wood=False),
             Material(f"手すり竹   直径{Dc:.0f}cm",          round(slope_len*100), 2),
             Material("木材フレーム（側板）",                  round(aL*100),        2, is_wood=True),
             Material("木材フレーム（端板）",                  round(W*100),         2, is_wood=True),
-            Material(f"垂木ブロック（竹固定用）高さ{Dc:.0f}cm", bracket_len_cm,   num*2, is_wood=True),
+            Material(f"垂木ブロック（パイプ固定用）高さ{Dc:.0f}cm", bracket_w_cm, num*2, is_wood=True),
             Material("コーススレッドビス 65mm以上",           65,                   num*4, is_wood=True),
-            Material("束石（地面固定用）",                    30,                   2, is_wood=True),
-            Material("アンカーボルト M10以上",                100,                  4, is_wood=True),
+            Material("単管パイプ φ48.6mm（支柱固定用）",     150,                  2, is_wood=False),
+            Material("直交クランプ（支柱連結用）",            10,                   4, is_wood=False),
         ]
         return svg_side, svg_top, materials
 
@@ -1136,13 +1138,22 @@ html, body, [class*="css"], .stMarkdown, p, div, label, button {
     font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
 }
 .block-container { padding: 1.2rem 1.5rem 2rem; max-width: 1200px; }
-@media(max-width:768px) { .block-container { padding: 0.5rem 0.5rem 1rem; } }
+@media(max-width:768px) {
+  .block-container { padding: 0.5rem 0.5rem 1rem; }
+  /* スマートフォンではStreamlitのヘッダーバー分だけ上にスペースを確保 */
+  .block-container > div:first-child { padding-top: 3.5rem !important; }
+}
 h1 {
     font-family: 'Zen Maru Gothic', sans-serif !important;
     font-size: 2.2rem !important; font-weight: 700 !important;
     color: #3d7a3d !important; letter-spacing: 0.06em;
     text-shadow: 1px 2px 6px #b8e6b860;
     padding-bottom: 0.2em; border-bottom: 3px solid #a8d5a2; margin-bottom: 1rem !important;
+    /* モバイルでヘッダーバーに隠れないよう上余白を確保 */
+    padding-top: 0.2rem !important;
+}
+@media(max-width:768px) {
+  h1 { font-size: 1.7rem !important; padding-top: 0.5rem !important; }
 }
 h2, h3 { font-family: 'Zen Maru Gothic', sans-serif !important; font-weight: 700 !important; color: #2e6e2e !important; letter-spacing: 0.04em; }
 .alert-box {
@@ -1411,44 +1422,112 @@ def _svg_step6_handrail() -> str:
 
 
 def _svg_step7_slope() -> str:
-    """⑦ 支柱の組み方・地面固定方法"""
-    return '''<svg viewBox="0 0 340 190" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
-  <text x="170" y="14" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">支柱の組み方と地面固定（最重要）</text>
+    """⑦ 支柱の組み方・地面固定方法（案①単管打ち込み／案②ウォーターウェイト）"""
+    return '''<svg viewBox="0 0 340 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
+  <text x="170" y="14" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">支柱の地面固定（案①単管打込み　案②ウォーターウェイト）</text>
+
+  <!-- ============================================================ -->
+  <!-- 案①：単管パイプ打ち込み式（左側）                          -->
+  <!-- ============================================================ -->
+  <text x="82" y="30" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">案① 単管パイプ打込み式</text>
+
   <!-- 地面 -->
-  <rect x="0" y="162" width="340" height="28" fill="#d7ccc8"/>
-  <line x1="0" y1="162" x2="340" y2="162" stroke="#795548" stroke-width="2"/>
-  <!-- 支柱高（束石固定） -->
-  <rect x="30" y="68" width="16" height="94" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
-  <!-- 束石（高支柱） -->
-  <rect x="20" y="150" width="36" height="14" rx="2" fill="#9e9e9e" stroke="#616161" stroke-width="1.5"/>
-  <!-- アンカーボルト（高） -->
-  <line x1="38" y1="162" x2="38" y2="175" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
-  <text x="20" y="185" font-size="8" fill="#37474f" font-family="sans-serif">束石+ボルト</text>
-  <!-- 支柱低 -->
-  <rect x="224" y="122" width="16" height="40" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
-  <!-- 束石（低支柱） -->
-  <rect x="214" y="150" width="36" height="14" rx="2" fill="#9e9e9e" stroke="#616161" stroke-width="1.5"/>
-  <line x1="232" y1="162" x2="232" y2="175" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
-  <!-- 斜め筋交い -->
-  <line x1="46" y1="120" x2="224" y2="148" stroke="#a1887f" stroke-width="4" stroke-linecap="round"/>
-  <text x="130" y="146" text-anchor="middle" font-size="9" fill="#5d4037" font-family="sans-serif" transform="rotate(-8,130,146)">筋交い</text>
+  <rect x="10" y="152" width="150" height="30" fill="#d7ccc8"/>
+  <line x1="10" y1="152" x2="160" y2="152" stroke="#795548" stroke-width="2"/>
+  <!-- 地中（打込み部） -->
+  <rect x="10" y="152" width="150" height="30" fill="#bcaaa4" opacity="0.5"/>
+
   <!-- 斜面フレーム -->
-  <polygon points="30,68 46,68 240,122 224,122" fill="#a1887f" stroke="#5d4037" stroke-width="1.5" opacity="0.8"/>
-  <!-- ローラー面 -->
-  <line x1="44" y1="72" x2="236" y2="124" stroke="#4caf50" stroke-width="7" stroke-linecap="round" opacity="0.85"/>
+  <polygon points="28,52 44,52 135,140 119,140" fill="#a1887f" stroke="#5d4037" stroke-width="1.5" opacity="0.85"/>
+  <!-- ローラー面（緑） -->
+  <line x1="42" y1="56" x2="130" y2="138" stroke="#4caf50" stroke-width="6" stroke-linecap="round" opacity="0.85"/>
+
+  <!-- 木製支柱（高い方） -->
+  <rect x="26" y="52" width="16" height="100" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+  <!-- 木製支柱（低い方） -->
+  <rect x="119" y="120" width="16" height="32" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+
+  <!-- 単管パイプ（地中打込み・高支柱側） -->
+  <rect x="31" y="140" width="6" height="36" rx="2" fill="#78909c" stroke="#455a64" stroke-width="1.5"/>
+  <!-- 地中部分（打ち込まれた部分）破線で表現 -->
+  <line x1="34" y1="152" x2="34" y2="176" stroke="#455a64" stroke-width="2" stroke-dasharray="3,2"/>
+  <text x="44" y="168" font-size="7" fill="#455a64" font-family="sans-serif">地中50cm↓</text>
+
+  <!-- 単管パイプ（低支柱側） -->
+  <rect x="124" y="140" width="6" height="36" rx="2" fill="#78909c" stroke="#455a64" stroke-width="1.5"/>
+  <line x1="127" y1="152" x2="127" y2="176" stroke="#455a64" stroke-width="2" stroke-dasharray="3,2"/>
+
+  <!-- 直交クランプ（高支柱） -->
+  <rect x="23" y="138" width="22" height="8" rx="2" fill="#607d8b" stroke="#37474f" stroke-width="1.2"/>
+  <text x="20" y="135" font-size="7" fill="#37474f" font-family="sans-serif">クランプ</text>
+
+  <!-- 筋交い -->
+  <line x1="44" y1="100" x2="119" y2="136" stroke="#a1887f" stroke-width="3" stroke-linecap="round"/>
+  <text x="74" y="130" font-size="8" fill="#5d4037" font-family="sans-serif" transform="rotate(-20,74,130)">筋交い</text>
+
   <!-- 傾斜角マーク -->
-  <path d="M 224 130 A 32 32 0 0 0 198 148" fill="none" stroke="#e53935" stroke-width="1.5"/>
-  <text x="188" y="161" font-size="9" fill="#c62828" font-family="sans-serif">≦35°</text>
-  <!-- 説明ボックス -->
-  <rect x="265" y="30" width="70" height="118" rx="6" fill="#fce4ec" stroke="#c62828" stroke-width="1.2"/>
-  <text x="300" y="46" text-anchor="middle" font-size="9" fill="#b71c1c" font-weight="bold" font-family="sans-serif">固定方法</text>
-  <text x="270" y="62" font-size="8" fill="#37474f" font-family="sans-serif">①束石を</text>
-  <text x="270" y="74" font-size="8" fill="#37474f" font-family="sans-serif">　地面に埋込</text>
-  <text x="270" y="90" font-size="8" fill="#37474f" font-family="sans-serif">②アンカー</text>
-  <text x="270" y="102" font-size="8" fill="#37474f" font-family="sans-serif">　ボルト固定</text>
-  <text x="270" y="118" font-size="8" fill="#37474f" font-family="sans-serif">③筋交いを</text>
-  <text x="270" y="130" font-size="8" fill="#37474f" font-family="sans-serif">　必ず入れる</text>
-  <text x="270" y="142" font-size="8" fill="#c62828" font-family="sans-serif">⚠転倒防止</text>
+  <path d="M 119 128 A 22 22 0 0 0 100 142" fill="none" stroke="#e53935" stroke-width="1.2"/>
+  <text x="92" y="156" font-size="8" fill="#c62828" font-family="sans-serif">≦35°</text>
+
+  <!-- 案①ラベルボックス -->
+  <rect x="10" y="186" width="150" height="44" rx="4" fill="#e3f2fd" stroke="#1565c0" stroke-width="1.2"/>
+  <text x="85" y="200" text-anchor="middle" font-size="8" fill="#0d47a1" font-weight="bold" font-family="sans-serif">単管φ48.6mm・50cm以上打込み</text>
+  <text x="85" y="213" text-anchor="middle" font-size="8" fill="#37474f" font-family="sans-serif">直交クランプで支柱と連結</text>
+  <text x="85" y="226" text-anchor="middle" font-size="8" fill="#1b5e20" font-family="sans-serif">✓ 一時設置・撤去が容易</text>
+
+  <!-- ============================================================ -->
+  <!-- 案②：ウォーターウェイト式（右側）                          -->
+  <!-- ============================================================ -->
+  <text x="258" y="30" text-anchor="middle" font-size="9" fill="#e65100" font-weight="bold" font-family="sans-serif">案② ウォーターウェイト式</text>
+
+  <!-- 地面（平坦・硬い） -->
+  <rect x="175" y="152" width="155" height="30" fill="#d7ccc8"/>
+  <line x1="175" y1="152" x2="330" y2="152" stroke="#795548" stroke-width="2"/>
+  <text x="252" y="170" text-anchor="middle" font-size="7" fill="#795548" font-family="sans-serif">平坦・硬い地面限定</text>
+
+  <!-- 斜面フレーム -->
+  <polygon points="192,52 208,52 300,140 284,140" fill="#a1887f" stroke="#5d4037" stroke-width="1.5" opacity="0.85"/>
+  <!-- ローラー面（緑） -->
+  <line x1="206" y1="56" x2="295" y2="138" stroke="#4caf50" stroke-width="6" stroke-linecap="round" opacity="0.85"/>
+
+  <!-- 木製支柱（高い方） -->
+  <rect x="190" y="52" width="16" height="100" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+  <!-- 木製支柱（低い方） -->
+  <rect x="284" y="120" width="16" height="32" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+
+  <!-- ウォーターウェイト（高支柱側・両側） -->
+  <!-- 左タンク -->
+  <rect x="174" y="126" width="18" height="28" rx="4" fill="#29b6f6" stroke="#0277bd" stroke-width="1.5"/>
+  <text x="183" y="142" text-anchor="middle" font-size="6.5" fill="#01579b" font-weight="bold" font-family="sans-serif">水</text>
+  <text x="183" y="151" text-anchor="middle" font-size="6" fill="#01579b" font-family="sans-serif">20L+</text>
+  <!-- 右タンク -->
+  <rect x="206" y="126" width="18" height="28" rx="4" fill="#29b6f6" stroke="#0277bd" stroke-width="1.5"/>
+  <text x="215" y="142" text-anchor="middle" font-size="6.5" fill="#01579b" font-weight="bold" font-family="sans-serif">水</text>
+  <text x="215" y="151" text-anchor="middle" font-size="6" fill="#01579b" font-family="sans-serif">20L+</text>
+
+  <!-- ウォーターウェイト（低支柱側） -->
+  <rect x="268" y="126" width="18" height="28" rx="4" fill="#29b6f6" stroke="#0277bd" stroke-width="1.5"/>
+  <text x="277" y="142" text-anchor="middle" font-size="6.5" fill="#01579b" font-weight="bold" font-family="sans-serif">水</text>
+  <rect x="300" y="126" width="18" height="28" rx="4" fill="#29b6f6" stroke="#0277bd" stroke-width="1.5"/>
+  <text x="309" y="142" text-anchor="middle" font-size="6.5" fill="#01579b" font-weight="bold" font-family="sans-serif">水</text>
+
+  <!-- ロープで縛り付け（波線） -->
+  <path d="M 174 136 Q 183 130 192 136 Q 200 142 206 136" fill="none" stroke="#e65100" stroke-width="1.5" stroke-dasharray="2,1"/>
+  <text x="190" y="125" text-anchor="middle" font-size="7" fill="#e65100" font-family="sans-serif">ロープ固定</text>
+
+  <!-- 筋交い -->
+  <line x1="208" y1="100" x2="284" y2="136" stroke="#a1887f" stroke-width="3" stroke-linecap="round"/>
+  <text x="238" y="130" font-size="8" fill="#5d4037" font-family="sans-serif" transform="rotate(-20,238,130)">筋交い</text>
+
+  <!-- 傾斜角マーク -->
+  <path d="M 284 128 A 22 22 0 0 0 265 142" fill="none" stroke="#e53935" stroke-width="1.2"/>
+  <text x="256" y="156" font-size="8" fill="#c62828" font-family="sans-serif">≦35°</text>
+
+  <!-- 案②ラベルボックス -->
+  <rect x="175" y="186" width="155" height="44" rx="4" fill="#fff3e0" stroke="#e65100" stroke-width="1.2"/>
+  <text x="252" y="200" text-anchor="middle" font-size="8" fill="#e65100" font-weight="bold" font-family="sans-serif">各支柱に水タンク20kg以上×両側</text>
+  <text x="252" y="213" text-anchor="middle" font-size="8" fill="#37474f" font-family="sans-serif">ロープ・ベルトで支柱にしっかり固定</text>
+  <text x="252" y="226" text-anchor="middle" font-size="8" fill="#c62828" font-family="sans-serif">⚠ 平坦・硬い地面・大人付添い限定</text>
 </svg>'''
 
 
@@ -1491,100 +1570,209 @@ _STEP_SVGS = [
 
 # ── SVG：③ 垂木の両側挟み込み固定（画像確認に基づく正確な構造）──
 def _svg_step3_clamp() -> str:
-    """③ 垂木で竹を両側から挟み込んでビス固定"""
-    return '''<svg viewBox="0 0 340 190" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
-  <text x="170" y="14" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">垂木ブロックで竹を両側から挟み込みビス固定</text>
-  <!-- フレーム長材（横） -->
-  <rect x="10" y="88" width="320" height="18" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
-  <!-- 竹（断面・横） -->
-  <ellipse cx="80" cy="76" rx="22" ry="22" fill="#4caf50" stroke="#2e7d32" stroke-width="2"/>
-  <ellipse cx="80" cy="76" rx="10" ry="10" fill="#81c784" stroke="#388e3c" stroke-width="1"/>
-  <!-- パイプ芯（断面） -->
-  <ellipse cx="80" cy="76" rx="5" ry="5" fill="#b0bec5" stroke="#607d8b" stroke-width="1.2"/>
-  <!-- 垂木ブロック（左側） -->
-  <rect x="42" y="56" width="18" height="50" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="1.5"/>
-  <!-- 垂木ブロック（右側） -->
-  <rect x="100" y="56" width="18" height="50" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="1.5"/>
-  <!-- ビス（左垂木→フレーム） -->
-  <line x1="51" y1="100" x2="51" y2="110" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
-  <polygon points="47,110 55,110 51,118" fill="#9e9e9e"/>
-  <!-- ビス（右垂木→フレーム） -->
-  <line x1="109" y1="100" x2="109" y2="110" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
-  <polygon points="105,110 113,110 109,118" fill="#9e9e9e"/>
-  <!-- ラベル：垂木L -->
-  <text x="30" y="52" font-size="9" fill="#5d4037" font-family="sans-serif">垂木(左)</text>
-  <!-- ラベル：垂木R -->
-  <text x="100" y="52" font-size="9" fill="#5d4037" font-family="sans-serif">垂木(右)</text>
-  <!-- ラベル：竹 -->
-  <text x="68" y="132" font-size="9" fill="#2e7d32" font-family="sans-serif">竹+パイプ</text>
-  <!-- 矢印：挟み込みイメージ -->
-  <line x1="60" y1="76" x2="44" y2="76" stroke="#e53935" stroke-width="1.5"/>
-  <polygon points="44,73 44,79 36,76" fill="#e53935"/>
-  <line x1="100" y1="76" x2="116" y2="76" stroke="#e53935" stroke-width="1.5"/>
-  <polygon points="116,73 116,79 124,76" fill="#e53935"/>
-  <!-- 2本目の竹セット（右側に繰り返しイメージ） -->
-  <ellipse cx="220" cy="76" rx="22" ry="22" fill="#4caf50" stroke="#2e7d32" stroke-width="2"/>
-  <ellipse cx="220" cy="76" rx="10" ry="10" fill="#81c784" stroke="#388e3c" stroke-width="1"/>
-  <ellipse cx="220" cy="76" rx="5" ry="5" fill="#b0bec5" stroke="#607d8b" stroke-width="1.2"/>
-  <rect x="182" y="56" width="18" height="50" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="1.5"/>
-  <rect x="240" y="56" width="18" height="50" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="1.5"/>
-  <line x1="191" y1="100" x2="191" y2="110" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
-  <polygon points="187,110 195,110 191,118" fill="#9e9e9e"/>
-  <line x1="249" y1="100" x2="249" y2="110" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
-  <polygon points="245,110 253,110 249,118" fill="#9e9e9e"/>
-  <!-- 説明 -->
-  <rect x="10" y="148" width="320" height="36" rx="5" fill="#fff8e1" stroke="#f9a825" stroke-width="1.2"/>
-  <text x="170" y="162" text-anchor="middle" font-size="9" fill="#37474f" font-family="sans-serif">竹の両側に垂木ブロックを密着させてフレームにビス固定。</text>
-  <text x="170" y="177" text-anchor="middle" font-size="9" fill="#e65100" font-family="sans-serif">切り込み不要。ブロックの高さ＝竹の直径程度が目安。</text>
+    """③ 垂木でパイプ両端を固定→竹がパイプを軸に回転するローラー構造（正確版）"""
+    return '''<svg viewBox="0 0 340 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
+  <text x="170" y="14" text-anchor="middle" font-size="11" fill="#546e7a" font-weight="bold" font-family="sans-serif">垂木ブロックでパイプを固定・竹はパイプ軸を中心に回転</text>
+
+  <!-- ============================================================ -->
+  <!-- 左：断面図（フレーム正面から見た図）                        -->
+  <!-- 竹外径=44px(r=22)、パイプ外径=14px(r=7)、中心y=96           -->
+  <!-- 垂木ブロック：パイプの両脇に密着、高さ＝竹の外径（44px）   -->
+  <!-- ============================================================ -->
+  <text x="82" y="30" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">断面図（フレーム正面）</text>
+
+  <!-- 木材フレーム底板 -->
+  <rect x="18" y="118" width="128" height="14" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+
+  <!-- 垂木ブロック左（パイプ左脇・高さ＝竹外径44px・y:74〜118） -->
+  <!-- パイプ左端に密着。右端はパイプ左面(cx-7=75)に接する -->
+  <rect x="36" y="74" width="17" height="44" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
+  <!-- 垂木ブロック右（パイプ右脇・y:74〜118） -->
+  <!-- パイプ右面(cx+7=89)から始まる -->
+  <rect x="111" y="74" width="17" height="44" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
+
+  <!-- パイプ断面（垂木ブロックの間を貫通・固定） -->
+  <ellipse cx="82" cy="96" rx="7" ry="7" fill="#90a4ae" stroke="#455a64" stroke-width="2"/>
+  <ellipse cx="82" cy="96" rx="3.5" ry="3.5" fill="#cfd8dc" stroke="#607d8b" stroke-width="1"/>
+  <text x="92" y="88" font-size="7.5" fill="#455a64" font-family="sans-serif">パイプ固定</text>
+
+  <!-- 竹断面（パイプを囲んで回転・外径r=22） -->
+  <!-- 竹はブロックの外側に配置されるのではなく、ブロックとブロックの間に収まる -->
+  <ellipse cx="82" cy="96" rx="22" ry="22" fill="#4caf50" stroke="#2e7d32" stroke-width="2" opacity="0.88"/>
+  <ellipse cx="82" cy="96" rx="13" ry="13" fill="#81c784" stroke="#388e3c" stroke-width="1" opacity="0.7"/>
+  <!-- パイプを竹の上に再描画 -->
+  <ellipse cx="82" cy="96" rx="7" ry="7" fill="#90a4ae" stroke="#455a64" stroke-width="2"/>
+  <ellipse cx="82" cy="96" rx="3.5" ry="3.5" fill="#cfd8dc" stroke="#607d8b" stroke-width="1"/>
+
+  <!-- 回転矢印 -->
+  <path d="M 100 80 A 22 22 0 0 1 104 96" fill="none" stroke="#e53935" stroke-width="2"/>
+  <polygon points="103,96 110,89 98,86" fill="#e53935"/>
+  <text x="110" y="78" font-size="8" fill="#c62828" font-family="sans-serif">竹が回転</text>
+
+  <!-- 高さ寸法線（垂木高さ＝竹外径） -->
+  <line x1="22" y1="74" x2="22" y2="118" stroke="#e53935" stroke-width="1.2"/>
+  <line x1="18" y1="74" x2="26" y2="74" stroke="#e53935" stroke-width="1.2"/>
+  <line x1="18" y1="118" x2="26" y2="118" stroke="#e53935" stroke-width="1.2"/>
+  <text x="1" y="93" font-size="7" fill="#c62828" font-family="sans-serif">高さ</text>
+  <text x="1" y="103" font-size="7" fill="#c62828" font-family="sans-serif">＝竹径</text>
+
+  <!-- ビス -->
+  <line x1="45" y1="118" x2="45" y2="127" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="41,127 49,127 45,134" fill="#757575"/>
+  <line x1="119" y1="118" x2="119" y2="127" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="115,127 123,127 119,134" fill="#757575"/>
+
+  <text x="30" y="70" font-size="8" fill="#5d4037" font-family="sans-serif">垂木(左)</text>
+  <text x="109" y="70" font-size="8" fill="#5d4037" font-family="sans-serif">垂木(右)</text>
+  <text x="58" y="148" font-size="8" fill="#2e7d32" font-family="sans-serif">竹（フリー回転）</text>
+
+  <!-- ============================================================ -->
+  <!-- 右：側面図（パイプが竹より長く両端を垂木ブロックで固定）   -->
+  <!-- ============================================================ -->
+  <text x="258" y="30" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">側面図（横から）</text>
+
+  <!-- 木材フレーム左右 -->
+  <rect x="170" y="108" width="14" height="24" rx="2" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+  <rect x="326" y="108" width="14" height="24" rx="2" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+
+  <!-- パイプ（竹より長い・フレーム内側を端から端まで） -->
+  <rect x="170" y="91" width="170" height="10" rx="3" fill="#90a4ae" stroke="#455a64" stroke-width="1.5"/>
+
+  <!-- 垂木ブロック左（パイプを固定・高さ＝竹径36px） -->
+  <rect x="173" y="78" width="20" height="54" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
+  <!-- 垂木ブロック右 -->
+  <rect x="317" y="78" width="20" height="54" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
+
+  <!-- 竹（ブロックとブロックの間・パイプより短い） -->
+  <rect x="196" y="78" width="118" height="36" rx="10" fill="#4caf50" stroke="#2e7d32" stroke-width="2"/>
+  <rect x="202" y="84" width="106" height="22" rx="6" fill="#81c784" stroke="#388e3c" stroke-width="1" opacity="0.55"/>
+  <text x="255" y="100" text-anchor="middle" font-size="8" fill="#1b5e20" font-weight="bold" font-family="sans-serif">竹（回転）</text>
+
+  <!-- パイプ飛び出し ← 矢印 -->
+  <line x1="170" y1="86" x2="193" y2="86" stroke="#455a64" stroke-width="1" stroke-dasharray="3,2"/>
+  <polygon points="170,84 170,88 164,86" fill="#455a64"/>
+  <text x="160" y="75" font-size="7" fill="#455a64" font-family="sans-serif">飛出し</text>
+  <!-- パイプ飛び出し → 矢印 -->
+  <line x1="317" y1="86" x2="340" y2="86" stroke="#455a64" stroke-width="1" stroke-dasharray="3,2"/>
+  <polygon points="340,84 340,88 346,86" fill="#455a64"/>
+  <text x="318" y="75" font-size="7" fill="#455a64" font-family="sans-serif">飛出し</text>
+
+  <!-- ビス -->
+  <line x1="183" y1="124" x2="183" y2="132" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="179,132 187,132 183,139" fill="#757575"/>
+  <line x1="327" y1="124" x2="327" y2="132" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="323,132 331,132 327,139" fill="#757575"/>
+
+  <!-- 竹長さ寸法（ブロック内側間） -->
+  <line x1="196" y1="70" x2="314" y2="70" stroke="#2e7d32" stroke-width="1.2"/>
+  <polygon points="196,68 196,72 190,70" fill="#2e7d32"/>
+  <polygon points="314,68 314,72 320,70" fill="#2e7d32"/>
+  <text x="255" y="67" text-anchor="middle" font-size="7" fill="#1b5e20" font-family="sans-serif">竹の長さ（パイプより短い）</text>
+
+  <!-- ============================================================ -->
+  <!-- 下部：説明ボックス                                           -->
+  <!-- ============================================================ -->
+  <rect x="10" y="162" width="320" height="68" rx="5" fill="#fff8e1" stroke="#f57f17" stroke-width="1.5"/>
+  <text x="170" y="178" text-anchor="middle" font-size="9" fill="#e65100" font-weight="bold" font-family="sans-serif">【重要】固定するのはパイプ。竹はパイプを軸にフリー回転。</text>
+  <text x="170" y="193" text-anchor="middle" font-size="8.5" fill="#37474f" font-family="sans-serif">パイプは竹の両端から飛び出させ、飛び出し部を垂木ブロックで挟んでビス固定。</text>
+  <text x="170" y="208" text-anchor="middle" font-size="8.5" fill="#c62828" font-family="sans-serif">垂木ブロック高さ＝竹の外径。これにより竹がローラーとして外れずに回転する。</text>
+  <text x="170" y="223" text-anchor="middle" font-size="8.5" fill="#37474f" font-family="sans-serif">竹の長さ ＝ パイプの長さ − 垂木ブロック幅 × 2</text>
 </svg>'''
 
 
 # ── SVG：⑥ 手すり固定方法（貫通穴＋木材設置面ビス）──
 def _svg_step6_handrail_v2() -> str:
-    """⑥ 手すり竹：貫通穴あけ→木材設置面にビス固定"""
-    return '''<svg viewBox="0 0 340 195" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
-  <text x="170" y="14" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">手すり竹の固定方法（2ステップ）</text>
+    """⑥ 手すり竹：斜面に沿った全体図＋貫通穴→ビス固定の詳細図"""
+    return '''<svg viewBox="0 0 340 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
+  <text x="170" y="14" text-anchor="middle" font-size="11" fill="#546e7a" font-weight="bold" font-family="sans-serif">手すり竹の取付け方法</text>
 
-  <!-- ===== STEP A: ドリルで貫通穴 ===== -->
-  <text x="90" y="34" text-anchor="middle" font-size="10" fill="#1565c0" font-weight="bold" font-family="sans-serif">Step A: 貫通穴をあける</text>
-  <!-- 手すり竹（断面・横向き） -->
-  <ellipse cx="90" cy="72" rx="28" ry="28" fill="#2e7d32" stroke="#1b5e20" stroke-width="2"/>
-  <ellipse cx="90" cy="72" rx="14" ry="14" fill="#388e3c" stroke="#1b5e20" stroke-width="1"/>
-  <!-- ドリルビット -->
-  <line x1="90" y1="20" x2="90" y2="56" stroke="#424242" stroke-width="5" stroke-linecap="round"/>
-  <polygon points="84,56 96,56 90,66" fill="#757575"/>
+  <!-- ============================================================ -->
+  <!-- 上段：斜面全体図（手すり竹を両側に取付けた状態）           -->
+  <!-- ============================================================ -->
+  <text x="170" y="30" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">全体図（斜面に沿って両側に設置）</text>
+
+  <!-- 地面 -->
+  <rect x="10" y="148" width="320" height="16" fill="#d7ccc8"/>
+  <line x1="10" y1="148" x2="330" y2="148" stroke="#795548" stroke-width="1.5"/>
+
+  <!-- 支柱（高い方・左） -->
+  <rect x="28" y="48" width="12" height="100" rx="2" fill="#8d6e63" stroke="#5d4037" stroke-width="1.2"/>
+  <!-- 支柱（低い方・右） -->
+  <rect x="232" y="112" width="12" height="36" rx="2" fill="#8d6e63" stroke="#5d4037" stroke-width="1.2"/>
+
+  <!-- 斜面フレーム（台形） -->
+  <polygon points="28,48 40,48 244,112 232,112" fill="#a1887f" stroke="#5d4037" stroke-width="1.2" opacity="0.85"/>
+
+  <!-- ローラー竹（緑の帯）斜面上 -->
+  <line x1="40" y1="53" x2="234" y2="110" stroke="#4caf50" stroke-width="10" stroke-linecap="round" opacity="0.9"/>
+  <text x="137" y="93" text-anchor="middle" font-size="8" fill="#1b5e20" font-family="sans-serif" transform="rotate(-16,137,93)">ローラー竹</text>
+
+  <!-- 手すり竹（左側・斜面に平行・高め） -->
+  <line x1="24" y1="33" x2="232" y2="96" stroke="#2e7d32" stroke-width="9" stroke-linecap="round" opacity="0.9"/>
+  <text x="80" y="50" font-size="8" fill="#1b5e20" font-weight="bold" font-family="sans-serif" transform="rotate(-16,80,50)">手すり竹（左）</text>
+
+  <!-- 手すり竹（右側・奥・少し薄く） -->
+  <line x1="42" y1="36" x2="248" y2="99" stroke="#1b5e20" stroke-width="7" stroke-linecap="round" opacity="0.55"/>
+  <text x="190" y="78" font-size="8" fill="#1b5e20" font-family="sans-serif" transform="rotate(-16,190,78)">手すり竹（右）</text>
+
+  <!-- 高さ矢印（ローラー面から手すりまで） -->
+  <line x1="50" y1="56" x2="42" y2="38" stroke="#e53935" stroke-width="1.2"/>
+  <polygon points="39,40 45,34 48,42" fill="#e53935"/>
+  <text x="2" y="52" font-size="7.5" fill="#c62828" font-family="sans-serif">15〜20cm</text>
+
+  <!-- ビス固定点（手すり左の両端） -->
+  <circle cx="26" cy="34" r="4" fill="#f57f17" stroke="#e65100" stroke-width="1.2"/>
+  <circle cx="232" cy="97" r="4" fill="#f57f17" stroke="#e65100" stroke-width="1.2"/>
+  <text x="250" y="100" font-size="7.5" fill="#e65100" font-family="sans-serif">ビス固定</text>
+
+  <!-- ============================================================ -->
+  <!-- 下段左：断面詳細A（ドリルで貫通穴）                        -->
+  <!-- ============================================================ -->
+  <text x="78" y="172" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">Step A: 貫通穴をあける</text>
+
+  <!-- 木材フレーム（断面） -->
+  <rect x="44" y="228" width="68" height="16" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+
+  <!-- 手すり竹（断面・円・竹の上面が木材に接する） -->
+  <ellipse cx="78" cy="210" rx="20" ry="20" fill="#2e7d32" stroke="#1b5e20" stroke-width="2"/>
+  <ellipse cx="78" cy="210" rx="10" ry="10" fill="#388e3c" stroke="#1b5e20" stroke-width="1"/>
+
+  <!-- ドリルビット（上から） -->
+  <line x1="78" y1="175" x2="78" y2="193" stroke="#424242" stroke-width="5" stroke-linecap="round"/>
+  <polygon points="72,193 84,193 78,200" fill="#616161"/>
   <!-- 貫通穴（竹上面） -->
-  <ellipse cx="90" cy="52" rx="5" ry="3" fill="#1b5e20" stroke="#000" stroke-width="0.8"/>
-  <!-- 貫通穴（竹下面） -->
-  <ellipse cx="90" cy="92" rx="5" ry="3" fill="#1b5e20" stroke="#000" stroke-width="0.8"/>
-  <!-- 矢印：ドリル方向 -->
-  <line x1="90" y1="15" x2="90" y2="22" stroke="#e53935" stroke-width="1.5"/>
-  <polygon points="86,22 94,22 90,28" fill="#e53935"/>
-  <text x="110" y="25" font-size="9" fill="#c62828" font-family="sans-serif">ドリルで</text>
-  <text x="110" y="37" font-size="9" fill="#c62828" font-family="sans-serif">貫通穴あけ</text>
+  <ellipse cx="78" cy="192" rx="4" ry="2.5" fill="#1b5e20"/>
+  <!-- 貫通穴（竹下面→木材へ） -->
+  <ellipse cx="78" cy="228" rx="4" ry="2.5" fill="#1b5e20"/>
 
-  <!-- ===== STEP B: 木材設置面にビス固定 ===== -->
-  <text x="255" y="34" text-anchor="middle" font-size="10" fill="#1565c0" font-weight="bold" font-family="sans-serif">Step B: 木材へビス固定</text>
-  <!-- 木材（フレーム断面） -->
-  <rect x="216" y="90" width="80" height="22" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
-  <!-- 手すり竹（下面が木材に接触） -->
-  <ellipse cx="256" cy="72" rx="28" ry="20" fill="#2e7d32" stroke="#1b5e20" stroke-width="2"/>
-  <ellipse cx="256" cy="68" rx="14" ry="10" fill="#388e3c" stroke="#1b5e20" stroke-width="1"/>
-  <!-- 設置面（竹の底と木材の接触ライン） -->
-  <line x1="216" y1="90" x2="296" y2="90" stroke="#e53935" stroke-width="2" stroke-dasharray="4,2"/>
-  <text x="303" y="93" font-size="8" fill="#c62828" font-family="sans-serif">設置面</text>
-  <!-- ビス（竹貫通穴→木材） -->
-  <line x1="244" y1="60" x2="244" y2="106" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
-  <polygon points="240,106 248,106 244,114" fill="#9e9e9e"/>
-  <line x1="268" y1="60" x2="268" y2="106" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round"/>
-  <polygon points="264,106 272,106 268,114" fill="#9e9e9e"/>
-  <text x="256" y="130" text-anchor="middle" font-size="9" fill="#37474f" font-family="sans-serif">貫通穴を通して</text>
-  <text x="256" y="142" text-anchor="middle" font-size="9" fill="#37474f" font-family="sans-serif">木材にビス固定</text>
+  <!-- ドリル方向矢印 -->
+  <polygon points="74,178 82,178 78,185" fill="#e53935"/>
+  <text x="88" y="182" font-size="8" fill="#c62828" font-family="sans-serif">ドリルで</text>
+  <text x="88" y="193" font-size="8" fill="#c62828" font-family="sans-serif">貫通穴</text>
 
-  <!-- 注意ボックス -->
-  <rect x="10" y="155" width="320" height="36" rx="5" fill="#e8f5e9" stroke="#2e7d32" stroke-width="1.2"/>
-  <text x="170" y="169" text-anchor="middle" font-size="9" fill="#1b5e20" font-family="sans-serif">① ドリルで竹に貫通穴をあける（竹径より細いビットで）</text>
-  <text x="170" y="184" text-anchor="middle" font-size="9" fill="#1b5e20" font-family="sans-serif">② 貫通穴から長ビスを通し、竹と木材の設置面をしっかり固定する</text>
+  <!-- ============================================================ -->
+  <!-- 下段右：断面詳細B（長ビスで木材に固定）                    -->
+  <!-- ============================================================ -->
+  <text x="252" y="172" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">Step B: 長ビスで木材固定</text>
+
+  <!-- 木材フレーム（断面） -->
+  <rect x="218" y="228" width="68" height="16" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+
+  <!-- 手すり竹（断面） -->
+  <ellipse cx="252" cy="210" rx="20" ry="20" fill="#2e7d32" stroke="#1b5e20" stroke-width="2"/>
+  <ellipse cx="252" cy="210" rx="10" ry="10" fill="#388e3c" stroke="#1b5e20" stroke-width="1"/>
+
+  <!-- 接触ライン（竹底面＝木材上面） -->
+  <line x1="218" y1="228" x2="286" y2="228" stroke="#e53935" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="290" y="231" font-size="7" fill="#c62828" font-family="sans-serif">設置面</text>
+
+  <!-- 長ビス（竹貫通→木材） -->
+  <line x1="244" y1="192" x2="244" y2="240" stroke="#9e9e9e" stroke-width="3.5" stroke-linecap="round"/>
+  <polygon points="240,240 248,240 244,248" fill="#757575"/>
+  <line x1="260" y1="192" x2="260" y2="240" stroke="#9e9e9e" stroke-width="3.5" stroke-linecap="round"/>
+  <polygon points="256,240 264,240 260,248" fill="#757575"/>
+
+  <text x="252" y="255" text-anchor="middle" font-size="7.5" fill="#37474f" font-family="sans-serif">コーススレッド90mm以上</text>
 </svg>'''
 
 
@@ -1771,11 +1959,20 @@ def render_slide_construction_guide(diameter_cm: float):
         },
     ]
 
+    import base64
+
+    def _render_svg(svg_str: str):
+        b64 = base64.b64encode(svg_str.encode("utf-8")).decode("utf-8")
+        st.markdown(
+            f'<img src="data:image/svg+xml;base64,{b64}" '            f'style="width:100%;max-width:400px;height:auto;display:block;" />',
+            unsafe_allow_html=True,
+        )
+
     for step in steps:
         with st.expander(f"{step['icon']} {step['title']}", expanded=False):
             col_img, col_text = st.columns([1, 1])
             with col_img:
-                st.markdown(step["svg"](), unsafe_allow_html=True)
+                _render_svg(step["svg"]())
             with col_text:
                 st.markdown(step["desc"])
                 st.markdown("**📌 ポイント：**")
@@ -1824,6 +2021,8 @@ def render_slide_construction_guide(diameter_cm: float):
 def main():
     st.set_page_config(page_title="竹あそび", layout="wide")
     st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
+    # モバイルでヘッダーバーにタイトルが隠れないようスペーサーを挿入
+    st.markdown('<div style="height:0.5rem"></div>', unsafe_allow_html=True)
     st.title("🎋 竹あそび")
     st.markdown("""
 <div class="disclaimer-box">
