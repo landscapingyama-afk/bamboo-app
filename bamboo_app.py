@@ -728,8 +728,8 @@ class SlidePlugin(ToolPlugin):
 
         # パイプ長さ = 滑り台の幅（端板と同じ）、本数 = 横材本数と同数
         pipe_len_cm = round(W * 100)
-        # 垂木ブロック幅（1個あたり）：竹径程度
-        bracket_w_cm = round(Dc * 2)   # 長さ（奥行き）
+        # 垂木ブロック幅（1個あたり）：8cm×8cm を基準とする（参考値）
+        bracket_w_cm = 8   # 片側8cm固定（両端で+16cm がパイプ余長）
         # 竹の長さ = パイプ長さ - 垂木ブロック幅 × 2（両端の固定代）
         bamboo_len_cm = pipe_len_cm - bracket_w_cm * 2
         materials = [
@@ -739,7 +739,7 @@ class SlidePlugin(ToolPlugin):
             Material(f"手すり竹   直径{Dc:.0f}cm",          round(slope_len*100), 2),
             Material("木材フレーム（側板）",                  round(aL*100),        2, is_wood=True),
             Material("木材フレーム（端板）",                  round(W*100),         2, is_wood=True),
-            Material(f"垂木ブロック（パイプ固定用）高さ{Dc:.0f}cm", bracket_w_cm, num*2, is_wood=True),
+            Material(f"垂木ブロック(パイプ固定用)高さ{Dc:.0f}cm(参考:8cm×8cm)", bracket_w_cm, num*2, is_wood=True),
             Material("コーススレッドビス 65mm以上",           65,                   num*4, is_wood=True),
             Material("単管パイプ φ48.6mm（支柱固定用）",     150,                  2, is_wood=False),
             Material("直交クランプ（支柱連結用）",            10,                   4, is_wood=False),
@@ -1052,9 +1052,20 @@ class JungleGymPlugin(ToolPlugin):
 
         s += ell(cx_s, ay, T*self.APEX_SCALE, T*self.APEX_SCALE, BM, BD, 1.2)
         # ── 荷重集中点マーカー（頂点・脚接地部）──
+        # 頂点はラベル付き、脚接地はラベルなし赤丸のみ（重なり防止）
         s += load_marker(cx_s, ay, r=11, label="頂点接合注意")
         for fx in feet:
-            s += load_marker(fx, gy, r=8, label="脚接地・固定注意")
+            # ラベルなし赤丸のみ
+            s += (f'<circle cx="{fx:.2f}" cy="{gy:.2f}" r="8"'
+                  f' fill="#e53935" opacity="0.32" stroke="#b71c1c" stroke-width="1.2"/>'
+                  f'<circle cx="{fx:.2f}" cy="{gy:.2f}" r="2.8"'
+                  f' fill="#b71c1c" opacity="0.75"/>')
+        s += dim_h(cx_s-fw/2, cx_s+fw/2, gy+30, W)
+        s += dim_v(cx_s-fw/2-44, ay, gy, H)
+        # 脚接地の注記を1箇所にまとめて表示
+        s += (f'<text x="{cx_s:.2f}" y="{gy+52:.2f}" text-anchor="middle"'
+              f' font-size="9" fill="#b71c1c" font-weight="bold">'
+              f'●脚接地部・固定注意（全{n_poles}箇所）</text>')
         s += dim_h(cx_s-fw/2, cx_s+fw/2, gy+30, W)
         s += dim_v(cx_s-fw/2-44, ay, gy, H)
         svg_side = make_svg(VW, VH, s, f"側面図（円錐型 {n_poles}本）")
@@ -1093,11 +1104,15 @@ class JungleGymPlugin(ToolPlugin):
         r1_chord   = 2*(W/2)*self.RING_RATIOS[0]*math.sin(math.pi/n_poles)
         r2_chord   = 2*(W/2)*self.RING_RATIOS[1]*math.sin(math.pi/n_poles)
         rope_len   = round(Dc*math.pi*4 + 40)
+        # 段結束用麻紐：1箇所あたり3〜4m × 24箇所（1段12箇所×2段）
+        hemp_per_knot_cm = 350   # 1箇所あたり350cm（3〜4mの中央値）
+        hemp_total_knots = n_poles * 2 * 2   # 支柱数×各支柱2箇所×2段 = 24
         materials  = [
             Material(f"主柱竹（傾斜）  直径{Dc:.0f}cm", round(pole_len*100),              n_poles),
             Material(f"横渡し竹（下段）直径{Dc:.0f}cm", round(r1_chord*100)+OVERLAP_CM,  n_poles),
             Material(f"横渡し竹（上段）直径{Dc:.0f}cm", round(r2_chord*100)+OVERLAP_CM,  n_poles),
-            Material("結束ロープ（頂点用）",             rope_len,                         1, is_rope=True),
+            Material("結束ロープ（頂点用）（縄）",        rope_len,                         1, is_rope=True),
+            Material(f"麻紐（1・2段結束用）3〜4m×{hemp_total_knots}箇所", hemp_per_knot_cm, hemp_total_knots, is_rope=True),
         ]
         return svg_side, svg_top, materials
 
@@ -1680,102 +1695,88 @@ def _svg_step3_clamp() -> str:
 </svg>'''
 
 
-# ── SVG：⑥ 手すり固定方法（貫通穴＋木材設置面ビス）──
+# ── SVG：⑥ 手すり固定方法（貫通穴→ビス固定・Step Aのみ）──
 def _svg_step6_handrail_v2() -> str:
-    """⑥ 手すり竹：斜面に沿った全体図＋貫通穴→ビス固定の詳細図"""
-    return '''<svg viewBox="0 0 340 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
-  <text x="170" y="14" text-anchor="middle" font-size="11" fill="#546e7a" font-weight="bold" font-family="sans-serif">手すり竹の取付け方法</text>
+    """⑥ 手すり竹：斜面全体図＋Step A（貫通穴→ビス固定）のみ表示"""
+    return '''<svg viewBox="0 0 340 270" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
+  <text x="170" y="14" text-anchor="middle" font-size="11" fill="#546e7a" font-weight="bold" font-family="sans-serif">手すり竹の取付け方法（垂木ブロック上に設置）</text>
 
-  <!-- ============================================================ -->
-  <!-- 上段：斜面全体図（手すり竹を両側に取付けた状態）           -->
-  <!-- ============================================================ -->
-  <text x="170" y="30" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">全体図（斜面に沿って両側に設置）</text>
+  <!-- 上段：全体図 -->
+  <text x="170" y="30" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">全体図（斜面に沿って垂木ブロック上に設置）</text>
 
   <!-- 地面 -->
   <rect x="10" y="148" width="320" height="16" fill="#d7ccc8"/>
   <line x1="10" y1="148" x2="330" y2="148" stroke="#795548" stroke-width="1.5"/>
 
-  <!-- 支柱（高い方・左） -->
-  <rect x="28" y="48" width="12" height="100" rx="2" fill="#8d6e63" stroke="#5d4037" stroke-width="1.2"/>
-  <!-- 支柱（低い方・右） -->
-  <rect x="232" y="112" width="12" height="36" rx="2" fill="#8d6e63" stroke="#5d4037" stroke-width="1.2"/>
+  <!-- 支柱（左高・右低） -->
+  <rect x="28"  y="48"  width="12" height="100" rx="2" fill="#8d6e63" stroke="#5d4037" stroke-width="1.2"/>
+  <rect x="232" y="112" width="12" height="36"  rx="2" fill="#8d6e63" stroke="#5d4037" stroke-width="1.2"/>
 
-  <!-- 斜面フレーム（台形） -->
+  <!-- 斜面フレーム -->
   <polygon points="28,48 40,48 244,112 232,112" fill="#a1887f" stroke="#5d4037" stroke-width="1.2" opacity="0.85"/>
 
-  <!-- ローラー竹（緑の帯）斜面上 -->
+  <!-- ローラー竹 -->
   <line x1="40" y1="53" x2="234" y2="110" stroke="#4caf50" stroke-width="10" stroke-linecap="round" opacity="0.9"/>
   <text x="137" y="93" text-anchor="middle" font-size="8" fill="#1b5e20" font-family="sans-serif" transform="rotate(-16,137,93)">ローラー竹</text>
 
-  <!-- 手すり竹（左側・斜面に平行・高め） -->
+  <!-- 垂木ブロック（両端・赤枠で強調） -->
+  <rect x="26"  y="46"  width="16" height="10" rx="2" fill="#e53935" opacity="0.75" stroke="#b71c1c" stroke-width="1.2"/>
+  <rect x="230" y="110" width="16" height="10" rx="2" fill="#e53935" opacity="0.75" stroke="#b71c1c" stroke-width="1.2"/>
+  <text x="14"  y="43"  font-size="7.5" fill="#c62828" font-weight="bold" font-family="sans-serif">垂木</text>
+  <text x="14"  y="52"  font-size="7.5" fill="#c62828" font-weight="bold" font-family="sans-serif">ブロック</text>
+  <text x="250" y="122" font-size="7.5" fill="#c62828" font-weight="bold" font-family="sans-serif">垂木BK</text>
+
+  <!-- 手すり竹（左） -->
   <line x1="24" y1="33" x2="232" y2="96" stroke="#2e7d32" stroke-width="9" stroke-linecap="round" opacity="0.9"/>
   <text x="80" y="50" font-size="8" fill="#1b5e20" font-weight="bold" font-family="sans-serif" transform="rotate(-16,80,50)">手すり竹（左）</text>
 
-  <!-- 手すり竹（右側・奥・少し薄く） -->
+  <!-- 手すり竹（右・奥） -->
   <line x1="42" y1="36" x2="248" y2="99" stroke="#1b5e20" stroke-width="7" stroke-linecap="round" opacity="0.55"/>
   <text x="190" y="78" font-size="8" fill="#1b5e20" font-family="sans-serif" transform="rotate(-16,190,78)">手すり竹（右）</text>
 
-  <!-- 高さ矢印（ローラー面から手すりまで） -->
+  <!-- 高さ矢印 -->
   <line x1="50" y1="56" x2="42" y2="38" stroke="#e53935" stroke-width="1.2"/>
   <polygon points="39,40 45,34 48,42" fill="#e53935"/>
   <text x="2" y="52" font-size="7.5" fill="#c62828" font-family="sans-serif">15〜20cm</text>
 
-  <!-- ビス固定点（手すり左の両端） -->
-  <circle cx="26" cy="34" r="4" fill="#f57f17" stroke="#e65100" stroke-width="1.2"/>
+  <!-- ビス固定点 -->
+  <circle cx="26"  cy="34" r="4" fill="#f57f17" stroke="#e65100" stroke-width="1.2"/>
   <circle cx="232" cy="97" r="4" fill="#f57f17" stroke="#e65100" stroke-width="1.2"/>
   <text x="250" y="100" font-size="7.5" fill="#e65100" font-family="sans-serif">ビス固定</text>
 
-  <!-- ============================================================ -->
-  <!-- 下段左：断面詳細A（ドリルで貫通穴）                        -->
-  <!-- ============================================================ -->
-  <text x="78" y="172" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">Step A: 貫通穴をあける</text>
+  <!-- 下段：断面詳細（Step Aのみ・中央に大きく） -->
+  <text x="170" y="174" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">断面詳細：ドリルで貫通穴 → 長ビスで垂木ブロックに固定</text>
 
-  <!-- 木材フレーム（断面） -->
-  <rect x="44" y="228" width="68" height="16" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+  <!-- 垂木ブロック（断面） -->
+  <rect x="110" y="234" width="120" height="18" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+  <text x="170" y="247" text-anchor="middle" font-size="8" fill="white" font-weight="bold" font-family="sans-serif">垂木ブロック</text>
 
-  <!-- 手すり竹（断面・円・竹の上面が木材に接する） -->
-  <ellipse cx="78" cy="210" rx="20" ry="20" fill="#2e7d32" stroke="#1b5e20" stroke-width="2"/>
-  <ellipse cx="78" cy="210" rx="10" ry="10" fill="#388e3c" stroke="#1b5e20" stroke-width="1"/>
+  <!-- 手すり竹（断面・中央大きめ） -->
+  <ellipse cx="170" cy="214" rx="24" ry="24" fill="#2e7d32" stroke="#1b5e20" stroke-width="2"/>
+  <ellipse cx="170" cy="214" rx="12" ry="12" fill="#388e3c" stroke="#1b5e20" stroke-width="1"/>
 
-  <!-- ドリルビット（上から） -->
-  <line x1="78" y1="175" x2="78" y2="193" stroke="#424242" stroke-width="5" stroke-linecap="round"/>
-  <polygon points="72,193 84,193 78,200" fill="#616161"/>
-  <!-- 貫通穴（竹上面） -->
-  <ellipse cx="78" cy="192" rx="4" ry="2.5" fill="#1b5e20"/>
-  <!-- 貫通穴（竹下面→木材へ） -->
-  <ellipse cx="78" cy="228" rx="4" ry="2.5" fill="#1b5e20"/>
+  <!-- ドリルビット -->
+  <line x1="170" y1="176" x2="170" y2="192" stroke="#424242" stroke-width="6" stroke-linecap="round"/>
+  <polygon points="163,192 177,192 170,200" fill="#616161"/>
 
-  <!-- ドリル方向矢印 -->
-  <polygon points="74,178 82,178 78,185" fill="#e53935"/>
-  <text x="88" y="182" font-size="8" fill="#c62828" font-family="sans-serif">ドリルで</text>
-  <text x="88" y="193" font-size="8" fill="#c62828" font-family="sans-serif">貫通穴</text>
+  <!-- 貫通穴（竹上・下） -->
+  <ellipse cx="170" cy="192" rx="5" ry="3" fill="#1b5e20"/>
+  <ellipse cx="170" cy="234" rx="5" ry="3" fill="#1b5e20"/>
 
-  <!-- ============================================================ -->
-  <!-- 下段右：断面詳細B（長ビスで木材に固定）                    -->
-  <!-- ============================================================ -->
-  <text x="252" y="172" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">Step B: 長ビスで木材固定</text>
+  <!-- ドリル矢印 -->
+  <polygon points="165,179 175,179 170,186" fill="#e53935"/>
+  <text x="200" y="185" font-size="8" fill="#c62828" font-family="sans-serif">ドリルで貫通穴</text>
 
-  <!-- 木材フレーム（断面） -->
-  <rect x="218" y="228" width="68" height="16" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+  <!-- ビス2本（竹の太さに応じ2箇所） -->
+  <line x1="153" y1="193" x2="153" y2="250" stroke="#9e9e9e" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="149,250 157,250 153,258" fill="#757575"/>
+  <line x1="187" y1="193" x2="187" y2="250" stroke="#9e9e9e" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="183,250 191,250 187,258" fill="#757575"/>
 
-  <!-- 手すり竹（断面） -->
-  <ellipse cx="252" cy="210" rx="20" ry="20" fill="#2e7d32" stroke="#1b5e20" stroke-width="2"/>
-  <ellipse cx="252" cy="210" rx="10" ry="10" fill="#388e3c" stroke="#1b5e20" stroke-width="1"/>
-
-  <!-- 接触ライン（竹底面＝木材上面） -->
-  <line x1="218" y1="228" x2="286" y2="228" stroke="#e53935" stroke-width="1.5" stroke-dasharray="4,2"/>
-  <text x="290" y="231" font-size="7" fill="#c62828" font-family="sans-serif">設置面</text>
-
-  <!-- 長ビス（竹貫通→木材） -->
-  <line x1="244" y1="192" x2="244" y2="240" stroke="#9e9e9e" stroke-width="3.5" stroke-linecap="round"/>
-  <polygon points="240,240 248,240 244,248" fill="#757575"/>
-  <line x1="260" y1="192" x2="260" y2="240" stroke="#9e9e9e" stroke-width="3.5" stroke-linecap="round"/>
-  <polygon points="256,240 264,240 260,248" fill="#757575"/>
-
-  <text x="252" y="255" text-anchor="middle" font-size="7.5" fill="#37474f" font-family="sans-serif">コーススレッド90mm以上</text>
+  <!-- 2箇所固定ラベル -->
+  <text x="170" y="263" text-anchor="middle" font-size="8.5" fill="#e65100" font-weight="bold" font-family="sans-serif">竹の太さに応じてビス2箇所以上で固定する</text>
+  <text x="170" y="272" text-anchor="middle" font-size="8" fill="#37474f" font-family="sans-serif">コーススレッド90mm以上を使用</text>
 </svg>'''
-
-
 
 # ══════════════════════════════════════════════════════════════════
 # ブランコ製作手順ガイド用 SVG イラスト
@@ -2399,12 +2400,12 @@ def render_swing_construction_guide(diameter_cm: float):
 def _svg_jg_step1_hexagon() -> str:
     """1 hexagon base + 6 pillars converging to apex (tipi style)"""
     import math as _m
-    cx, cy_g, R = 180, 205, 82
+    cx, cy_g, R = 180, 195, 80
     def hp(i):
         a = _m.radians(90 + 60*i)
-        return cx + R*_m.cos(a), cy_g - R*_m.sin(a)*0.38
+        return cx + R*_m.cos(a), cy_g - R*_m.sin(a)*0.28  # y圧縮を小さくして④を地面上に
     pts = [hp(i) for i in range(6)]
-    apex = (180, 44)
+    apex = (180, 40)
     do = [3,4,5,0,1,2]
     gh = "".join(
         f'<line x1="{pts[i][0]:.1f}" y1="{pts[i][1]:.1f}"'
@@ -2423,29 +2424,33 @@ def _svg_jg_step1_hexagon() -> str:
         f'<text x="{pts[i][0]:.1f}" y="{pts[i][1]+4:.1f}" text-anchor="middle"'
         f' font-size="9" fill="white" font-weight="bold" font-family="sans-serif">{i+1}</text>'
         for i in range(6))
-    return f'''<svg viewBox="0 0 360 262" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:360px;height:auto;">
+    # ④の実際のy座標を確認して地面ラインを設定
+    y4 = pts[3][1]  # ④(i=3)のy座標
+    ground_y = y4 + 18  # ④の円の下端より少し下
+    return f'''<svg viewBox="0 0 360 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:360px;height:auto;">
   <text x="180" y="16" text-anchor="middle" font-size="11" font-weight="bold" fill="#2d6a2d" font-family="sans-serif">竹を六角形に配置し支柱6本を頂点で結束</text>
-  <rect x="0" y="228" width="360" height="34" fill="#d7ccc8"/>
-  <line x1="0" y1="228" x2="360" y2="228" stroke="#795548" stroke-width="2"/>
+  <rect x="0" y="{ground_y:.0f}" width="360" height="12" fill="#d7ccc8"/>
+  <line x1="0" y1="{ground_y:.0f}" x2="360" y2="{ground_y:.0f}" stroke="#795548" stroke-width="2"/>
   {gh}
   {pl}
   {lb}
   <circle cx="{apex[0]}" cy="{apex[1]}" r="18" fill="#BA7517" stroke="#8B4513" stroke-width="2.5"/>
   <text x="{apex[0]}" y="{apex[1]-3}" text-anchor="middle" font-size="8" fill="white" font-weight="bold" font-family="sans-serif">上部</text>
   <text x="{apex[0]}" y="{apex[1]+8}" text-anchor="middle" font-size="8" fill="white" font-weight="bold" font-family="sans-serif">結束</text>
-  <rect x="170" y="90" width="20" height="138" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5" opacity="0.80"/>
-  <line x1="170" y1="108" x2="190" y2="108" stroke="#5d4037" stroke-width="2.5"/>
-  <line x1="170" y1="126" x2="190" y2="126" stroke="#5d4037" stroke-width="2.5"/>
-  <line x1="170" y1="144" x2="190" y2="144" stroke="#5d4037" stroke-width="2.5"/>
-  <line x1="170" y1="162" x2="190" y2="162" stroke="#5d4037" stroke-width="2.5"/>
-  <line x1="170" y1="180" x2="190" y2="180" stroke="#5d4037" stroke-width="2.5"/>
-  <line x1="170" y1="198" x2="190" y2="198" stroke="#5d4037" stroke-width="2.5"/>
-  <text x="198" y="152" font-size="8" fill="#5d4037" font-weight="bold" font-family="sans-serif">はしご</text>
-  <text x="198" y="163" font-size="7.5" fill="#5d4037" font-family="sans-serif">中央に設置</text>
-  <text x="198" y="173" font-size="7.5" fill="#5d4037" font-family="sans-serif">上部作業が楽！</text>
-  <rect x="4" y="233" width="352" height="24" rx="4" fill="#e8f5e9" stroke="#388e3c" stroke-width="1.2"/>
-  <text x="180" y="245" text-anchor="middle" font-size="8" fill="#1b5e20" font-weight="bold" font-family="sans-serif">支柱6本を角に配置。まとめて頂点でロープを5回以上巻き結束</text>
-  <text x="180" y="256" text-anchor="middle" font-size="8" fill="#37474f" font-family="sans-serif">60度間隔で均等に広がっているか確認する</text>
+  <rect x="170" y="82" width="20" height="118" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5" opacity="0.80"/>
+  <line x1="170" y1="98"  x2="190" y2="98"  stroke="#5d4037" stroke-width="2.5"/>
+  <line x1="170" y1="116" x2="190" y2="116" stroke="#5d4037" stroke-width="2.5"/>
+  <line x1="170" y1="134" x2="190" y2="134" stroke="#5d4037" stroke-width="2.5"/>
+  <line x1="170" y1="152" x2="190" y2="152" stroke="#5d4037" stroke-width="2.5"/>
+  <line x1="170" y1="170" x2="190" y2="170" stroke="#5d4037" stroke-width="2.5"/>
+  <line x1="170" y1="188" x2="190" y2="188" stroke="#5d4037" stroke-width="2.5"/>
+  <text x="198" y="138" font-size="8" fill="#5d4037" font-weight="bold" font-family="sans-serif">はしご</text>
+  <text x="198" y="149" font-size="7.5" fill="#5d4037" font-family="sans-serif">中央に設置</text>
+  <text x="198" y="159" font-size="7.5" fill="#5d4037" font-family="sans-serif">上部作業が楽！</text>
+  <rect x="4" y="{ground_y+16:.0f}" width="352" height="54" rx="4" fill="#e8f5e9" stroke="#388e3c" stroke-width="1.2"/>
+  <text x="180" y="{ground_y+32:.0f}" text-anchor="middle" font-size="8" fill="#1b5e20" font-weight="bold" font-family="sans-serif">支柱6本を角に配置。まとめて頂点でロープを5回以上巻き結束</text>
+  <text x="180" y="{ground_y+46:.0f}" text-anchor="middle" font-size="8" fill="#37474f" font-family="sans-serif">60度間隔で均等に広がっているか確認する</text>
+  <text x="180" y="{ground_y+60:.0f}" text-anchor="middle" font-size="8" fill="#c62828" font-weight="bold" font-family="sans-serif">①②③④⑤⑥：各角の支柱位置（④は正面手前）</text>
 </svg>'''
 
 
@@ -2477,39 +2482,71 @@ def _svg_jg_step2_tier1() -> str:
                f'<text x="{x1:.1f}" y="{y1t+3:.1f}" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>'
                f'<circle cx="{x2:.1f}" cy="{y2t:.1f}" r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.92"/>'
                f'<text x="{x2:.1f}" y="{y2t+3:.1f}" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>')
-    return f'''<svg viewBox="0 0 360 272" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:360px;height:auto;">
+    return f'''<svg viewBox="0 0 360 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:360px;height:auto;">
   <text x="180" y="16" text-anchor="middle" font-size="11" font-weight="bold" fill="#2d6a2d" font-family="sans-serif">1段目：斜め配置で各支柱2箇所ずつ計12箇所結束</text>
-  <text x="85" y="34" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">斜め設置のしくみ（側面）</text>
-  <line x1="28"  y1="218" x2="72"  y2="52" stroke="#2e7d32" stroke-width="9" stroke-linecap="round"/>
-  <line x1="152" y1="218" x2="108" y2="52" stroke="#2e7d32" stroke-width="9" stroke-linecap="round"/>
-  <circle cx="90" cy="50" r="11" fill="#BA7517" stroke="#8B4513" stroke-width="2"/>
-  <line x1="20" y1="158" x2="158" y2="136" stroke="#4caf50" stroke-width="11" stroke-linecap="round"/>
-  <circle cx="28"  cy="158" r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.9"/>
-  <text x="28"  y="162" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>
-  <circle cx="152" cy="136" r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.9"/>
-  <text x="152" y="140" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>
-  <line x1="20" y1="112" x2="158" y2="90" stroke="#81c784" stroke-width="11" stroke-linecap="round" opacity="0.78"/>
-  <circle cx="28"  cy="112" r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.9"/>
-  <text x="28"  y="116" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>
-  <circle cx="152" cy="90"  r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.9"/>
-  <text x="152" y="94"  text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>
-  <line x1="10" y1="112" x2="10" y2="158" stroke="#e53935" stroke-width="1.5"/>
-  <line x1="6"  y1="112" x2="14" y2="112" stroke="#e53935" stroke-width="1.5"/>
-  <line x1="6"  y1="158" x2="14" y2="158" stroke="#e53935" stroke-width="1.5"/>
-  <text x="6" y="138" text-anchor="middle" font-size="7" fill="#c62828" font-family="sans-serif" transform="rotate(-90,6,138)">竹径分</text>
-  <rect x="6" y="228" width="160" height="36" rx="4" fill="#fff8e1" stroke="#f57f17" stroke-width="1.2"/>
-  <text x="86" y="242" text-anchor="middle" font-size="8" fill="#e65100" font-weight="bold" font-family="sans-serif">水平でなく竹径分傾ける！</text>
-  <text x="86" y="256" text-anchor="middle" font-size="8" fill="#37474f" font-family="sans-serif">1周すると同じ高さに揃う</text>
-  <text x="272" y="34" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">斜視図（1段目の状態）</text>
-  <rect x="172" y="228" width="182" height="30" fill="#d7ccc8"/>
-  <line x1="172" y1="228" x2="354" y2="228" stroke="#795548" stroke-width="2"/>
-  {pl}
-  <circle cx="{apex[0]}" cy="{apex[1]}" r="14" fill="#BA7517" stroke="#8B4513" stroke-width="2"/>
-  <text x="{apex[0]}" y="{apex[1]+4}" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結束</text>
-  {t1}
-  {k1}
-  <rect x="176" y="238" width="172" height="18" rx="3" fill="#e8f5e9" stroke="#388e3c" stroke-width="1"/>
-  <text x="262" y="251" text-anchor="middle" font-size="8" fill="#1b5e20" font-weight="bold" font-family="sans-serif">結束12箇所　麻紐3〜4m/1箇所</text>
+
+  <!-- ══ 上段：斜め設置のしくみ（側面図）══ -->
+  <text x="180" y="34" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">斜め設置のしくみ（側面図）</text>
+  <line x1="60"  y1="218" x2="130" y2="52"  stroke="#2e7d32" stroke-width="9" stroke-linecap="round"/>
+  <line x1="300" y1="218" x2="230" y2="52"  stroke="#2e7d32" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="180" cy="50" r="12" fill="#BA7517" stroke="#8B4513" stroke-width="2"/>
+  <text x="180" y="54" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">頂点</text>
+  <!-- 1段目竹（斜め） -->
+  <line x1="46"  y1="158" x2="316" y2="136" stroke="#4caf50" stroke-width="11" stroke-linecap="round"/>
+  <circle cx="60"  cy="158" r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.9"/>
+  <text x="60"  y="162" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>
+  <circle cx="300" cy="136" r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.9"/>
+  <text x="300" y="140" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>
+  <!-- 2段目竹（斜め・薄） -->
+  <line x1="46"  y1="110" x2="316" y2="88"  stroke="#81c784" stroke-width="11" stroke-linecap="round" opacity="0.78"/>
+  <circle cx="60"  cy="110" r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.9"/>
+  <text x="60"  y="114" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>
+  <circle cx="300" cy="88"  r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.9"/>
+  <text x="300" y="92"  text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>
+  <!-- 高さ差の寸法矢印 -->
+  <line x1="26" y1="110" x2="26" y2="158" stroke="#e53935" stroke-width="1.5"/>
+  <line x1="22" y1="110" x2="30" y2="110" stroke="#e53935" stroke-width="1.5"/>
+  <line x1="22" y1="158" x2="30" y2="158" stroke="#e53935" stroke-width="1.5"/>
+  <!-- 地面 -->
+  <line x1="30" y1="218" x2="330" y2="218" stroke="#795548" stroke-width="2"/>
+  <!-- 説明ボックス -->
+  <rect x="60" y="228" width="240" height="38" rx="4" fill="#fff8e1" stroke="#f57f17" stroke-width="1.2"/>
+  <text x="180" y="243" text-anchor="middle" font-size="9" fill="#e65100" font-weight="bold" font-family="sans-serif">水平でなく竹径分傾ける！</text>
+  <text x="180" y="259" text-anchor="middle" font-size="8.5" fill="#37474f" font-family="sans-serif">1周すると同じ高さに揃う</text>
+
+  <!-- 区切り線 -->
+  <line x1="20" y1="278" x2="340" y2="278" stroke="#c8e6c9" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+  <!-- ══ 下段：斜視図（1段目の状態）══ -->
+  <text x="180" y="298" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">斜視図（1段目の状態）</text>
+  <!-- 地面（下段） -->
+  <rect x="0" y="448" width="360" height="20" fill="#d7ccc8"/>
+  <line x1="0" y1="448" x2="360" y2="448" stroke="#795548" stroke-width="2"/>
+  <!-- 支柱（下段・斜視・座標をY+290シフト） -->
+  {chr(10).join(
+    f'<line x1="{pts[i][0]:.1f}" y1="{pts[i][1]+290:.1f}"'
+    f' x2="{apex[0]}" y2="{apex[1]+290}"'
+    f' stroke="#2e7d32" stroke-width="10" stroke-linecap="round" opacity="{ops2[j]*0.5:.2f}"/>'
+    for j,i in enumerate(do))}
+  <!-- 頂点（下段） -->
+  <circle cx="{apex[0]}" cy="{apex[1]+290}" r="14" fill="#BA7517" stroke="#8B4513" stroke-width="2"/>
+  <text x="{apex[0]}" y="{apex[1]+294}" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結束</text>
+  <!-- 1段目横竹（下段・斜め螺旋・Y+290シフト） -->
+  {chr(10).join(
+    f'<line x1="{pts[do[j]][0]:.1f}" y1="{pts[do[j]][1]-36-j*4+290:.1f}"'
+    f' x2="{pts[(do[j]+1)%6][0]:.1f}" y2="{pts[(do[j]+1)%6][1]-40-j*4+290:.1f}"'
+    f' stroke="#4caf50" stroke-width="10" stroke-linecap="round" opacity="0.95"/>'
+    for j in range(6))}
+  <!-- 結束マーク12箇所（下段・Y+290シフト） -->
+  {chr(10).join(
+    f'<circle cx="{pts[do[j]][0]:.1f}" cy="{pts[do[j]][1]-36-j*4+290:.1f}" r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.92"/>'
+    f'<text x="{pts[do[j]][0]:.1f}" y="{pts[do[j]][1]-33-j*4+290:.1f}" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>'
+    f'<circle cx="{pts[(do[j]+1)%6][0]:.1f}" cy="{pts[(do[j]+1)%6][1]-40-j*4+290:.1f}" r="9" fill="#e53935" stroke="#b71c1c" stroke-width="1.5" opacity="0.92"/>'
+    f'<text x="{pts[(do[j]+1)%6][0]:.1f}" y="{pts[(do[j]+1)%6][1]-37-j*4+290:.1f}" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">結</text>'
+    for j in range(6))}
+  <!-- 凡例ボックス（下段） -->
+  <rect x="60" y="456" width="240" height="18" rx="3" fill="#e8f5e9" stroke="#388e3c" stroke-width="1"/>
+  <text x="180" y="469" text-anchor="middle" font-size="8" fill="#1b5e20" font-weight="bold" font-family="sans-serif">結束12箇所　麻紐3〜4m/1箇所</text>
 </svg>'''
 
 
@@ -2655,6 +2692,7 @@ def render_junglegym_construction_guide(diameter_cm: float):
                 "支柱が均等な角度（約60°間隔）で広がっているか確認する。",
                 "結束後、全力で揺らして頂点がずれないか確認する。",
                 "割れ・虫食いのない乾燥竹（直径8cm以上）を使用すること。",
+                "⚠️ **各支柱の足先を地中に30cm以上埋め込み固定すること。** 計算上、摩擦のみでは子どもが登ったときの横方向力に対して不十分なため、ブランコ同様の地中固定が必要です。",
             ],
         },
         {
@@ -2800,7 +2838,8 @@ def render_slide_construction_guide(diameter_cm: float):
                 "パイプ外径は竹の内径より必ず小さいものを選ぶ（内径に余裕が必要）。",
                 "【目安】竹径 約7cm → φ19mm / 竹径 約8〜10cm → φ25.4mm / 竹径 約10〜12cm → φ34mm",
                 "亜鉛メッキ単管パイプは錆びにくく屋外使用に適している。",
-                "パイプ長さ ＝ 竹の長さ ＋ 両端の垂木ブロック固定代（各側20〜30mm）。竹より長くする必要がある。",
+                "パイプ長さ ＝ 竹の長さ ＋ 両端の垂木ブロック固定代（各側80mm）。竹より長くする必要がある。",
+                "📐 **参考：垂木ブロック 8cm×8cm を使用する場合** → 片側8cm × 2 ＝ パイプが竹より16cm長くなります。",
             ],
         },
         {
@@ -2815,7 +2854,8 @@ def render_slide_construction_guide(diameter_cm: float):
                 "グラインダーでも切断可能ですが、パイプカッターの方が断面が垂直で安全です。"
             ),
             "points": [
-                "パイプ長さ ＝ 竹の長さ ＋ 両端の垂木ブロック固定分（各側20〜30mm程度の余長）。",
+                "パイプ長さ ＝ 竹の長さ ＋ 両端の垂木ブロック固定分（各側80mm）。",
+                "📐 **参考：垂木ブロック 8cm×8cm を使用する場合** → 片側8cm、両端で＋16cm がパイプの余長になります。",
                 "パイプが竹の両端から確実に飛び出していることを確認してからカットする。",
                 "切断後は必ずヤスリでバリ取りを行う（子どもの手が触れる面は念入りに）。",
                 "紙やすり（#120程度）で仕上げるとより安全。",
@@ -2851,7 +2891,7 @@ def render_slide_construction_guide(diameter_cm: float):
             "svg": _svg_step4_node,
             "desc": (
                 "竹の内部には節（ふし）があるため、パイプを通す前に除去します。"
-                "竹を作業台に固定してから、太い棒やハンマーで端から叩くと節が抜けます。"
+                "竹を作業台に固定してから、**パイプや太い棒を竹の内腔に差し込み、ハンマーで端から叩く**と節が抜けます。"
                 "**必ず保護具を着用して作業してください。**"
             ),
             "points": [
@@ -2873,11 +2913,10 @@ def render_slide_construction_guide(diameter_cm: float):
                 "竹同士の隙間は指（約12mm）が入らない程度に詰めてください。"
             ),
             "points": [
-                "パイプは竹の両端から20〜30mm以上飛び出した長さにする（垂木ブロックで固定するため）。",
+                "パイプは竹の両端から80mm（8cm）以上飛び出した長さにする（垂木ブロック8cm×8cm で固定するため）。",
+                "📐 **参考：垂木ブロック 8cm×8cm** → パイプが竹より片側8cm、両端で合計16cm長い計算になります。",
                 "竹はパイプに対してフリーに回転できる状態であることを確認する。",
                 "竹を並べたら垂木ブロックのビスを本締めしてパイプを固定する。",
-                "竹同士の隙間が12mm以上になる場合は詰め竹（小径竹）で埋める。",
-                "竹の向きは太い方（根元側）を揃えると見た目が整う。",
             ],
         },
         {
@@ -2885,15 +2924,16 @@ def render_slide_construction_guide(diameter_cm: float):
             "icon": "🖐️",
             "svg": _svg_step6_handrail_v2,
             "desc": (
-                "ローラー面が完成したら、両側に手すり竹を取り付けます。\n\n"
+                "ローラー面が完成したら、**垂木ブロックの上**に手すり竹を取り付けます。\n\n"
                 "**固定手順：**\n"
                 "① まず竹に**ドリルで貫通穴をあける**（ビットは使用するビスより細いサイズ）。\n"
-                "② 貫通穴を通して**竹と木材の設置面に長ビスを打ち込み**固定する。\n\n"
+                "② 貫通穴を通して**竹と垂木ブロックの設置面に長ビスを打ち込み**固定する。\n\n"
                 "手すりの高さはローラー面から15〜20cm上が目安です。"
             ),
             "points": [
-                "ドリルで先に竹に貫通穴をあけてから、長ビス（コーススレッド90mm以上）で固定。",
-                "ビスは竹の貫通穴を通り、木材設置面に確実に打ち込まれているか確認する。",
+                "手すり竹は垂木ブロックの上に乗せ、ドリルで貫通穴をあけてから長ビス（コーススレッド90mm以上）で固定する。",
+                "竹の太さに応じて2箇所以上でビス固定し、手すりがぐらつかないようにする。",
+                "ビスは竹の貫通穴を通り、垂木ブロックに確実に打ち込まれているか確認する。",
                 "手すりは斜面に沿って平行に設置し、両端をしっかり固定する。",
                 "手すりを強く押しても動かないことを確認してから使用を開始する。",
             ],
