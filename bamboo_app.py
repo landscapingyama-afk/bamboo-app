@@ -1457,36 +1457,69 @@ def _svg_step5_roller() -> str:
   <line x1="262" y1="74" x2="266" y2="74" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
   <line x1="262" y1="88" x2="266" y2="88" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
 
-  <!-- ======== 垂木ブロック（立方体・横幅18px）フレーム側板の内側面に取付 ======== -->
-  <!-- 左側フレーム内側x=74。垂木ブロックはx=60〜78（フレーム内に収まる） -->
-  <!-- 左側 上ブロック -->
+  <!-- ======== 垂木ブロック（立方体・横幅14px）片側5個・両側10個 ======== -->
+  <!-- ローラー4本: y中心=46,60,74,88。上ブロックy=32、下ブロックy=102 -->
+  <!-- 間の3個: y=46,60,74（各ローラーに対応）                          -->
+
+  <!-- ===== 左側 5個 ===== -->
+  <!-- 左 ブロック1（最上）y=32 -->
   <rect x="62" y="32" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
   <polygon points="76,32 82,26 82,40 76,46" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
   <polygon points="62,32 68,26 82,26 76,32" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
   <text x="69" y="42" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
-  <!-- 左側 下ブロック -->
-  <rect x="62" y="88" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
-  <polygon points="76,88 82,82 82,96 76,102" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
-  <polygon points="62,88 68,82 82,82 76,88" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
-  <text x="69" y="98" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <!-- 左 ブロック2 y=46 -->
+  <rect x="62" y="46" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="76,46 82,40 82,54 76,60" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="62,46 68,40 82,40 76,46" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="69" y="56" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <!-- 左 ブロック3 y=60 -->
+  <rect x="62" y="60" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="76,60 82,54 82,68 76,74" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="62,60 68,54 82,54 76,60" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="69" y="70" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <!-- 左 ブロック4 y=74 -->
+  <rect x="62" y="74" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="76,74 82,68 82,82 76,88" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="62,74 68,68 82,68 76,74" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="69" y="84" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <!-- 左 ブロック5（最下）y=102 -->
+  <rect x="62" y="102" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="76,102 82,96 82,110 76,116" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="62,102 68,96 82,96 76,102" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="69" y="112" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
 
-  <!-- 右側フレーム内側x=266。垂木ブロックはx=258〜272（フレーム内） -->
-  <!-- 右側 上ブロック -->
+  <!-- ===== 右側 5個 ===== -->
+  <!-- 右 ブロック1（最上）y=32 -->
   <rect x="264" y="32" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
   <polygon points="278,32 284,26 284,40 278,46" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
   <polygon points="264,32 270,26 284,26 278,32" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
   <text x="271" y="42" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
-  <!-- 右側 下ブロック -->
-  <rect x="264" y="88" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
-  <polygon points="278,88 284,82 284,96 278,102" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
-  <polygon points="264,88 270,82 284,82 278,88" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
-  <text x="271" y="98" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <!-- 右 ブロック2 y=46 -->
+  <rect x="264" y="46" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="278,46 284,40 284,54 278,60" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="264,46 270,40 284,40 278,46" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="271" y="56" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <!-- 右 ブロック3 y=60 -->
+  <rect x="264" y="60" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="278,60 284,54 284,68 278,74" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="264,60 270,54 284,54 278,60" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="271" y="70" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <!-- 右 ブロック4 y=74 -->
+  <rect x="264" y="74" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="278,74 284,68 284,82 278,88" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="264,74 270,68 284,68 278,74" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="271" y="84" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <!-- 右 ブロック5（最下）y=102 -->
+  <rect x="264" y="102" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="278,102 284,96 284,110 278,116" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="264,102 270,96 284,96 278,102" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="271" y="112" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
 
-  <!-- ビス（上下ブロックを締める） -->
-  <line x1="69" y1="46" x2="69" y2="88" stroke="#9e9e9e" stroke-width="1.5" stroke-dasharray="3,2"/>
-  <polygon points="66,56 72,56 69,62" fill="#757575" opacity="0.8"/>
-  <line x1="271" y1="46" x2="271" y2="88" stroke="#9e9e9e" stroke-width="1.5" stroke-dasharray="3,2"/>
-  <polygon points="268,56 274,56 271,62" fill="#757575" opacity="0.8"/>
+  <!-- ビス（最上〜最下を締める） -->
+  <line x1="69" y1="46" x2="69" y2="102" stroke="#9e9e9e" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <polygon points="66,68 72,68 69,74" fill="#757575" opacity="0.8"/>
+  <line x1="271" y1="46" x2="271" y2="102" stroke="#9e9e9e" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <polygon points="268,68 274,68 271,74" fill="#757575" opacity="0.8"/>
 
   <!-- 凡例 -->
   <rect x="80" y="115" width="10" height="8" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1"/>
@@ -2955,9 +2988,9 @@ def _svg_step8_ladder() -> str:
   <text x="295" y="30" text-anchor="middle" font-size="7.5" fill="#c62828" font-weight="bold" font-family="sans-serif">ローラーに引っかかる！</text>
 
   <!-- ===== 縦桟（左）・踏み板より手前に描く ===== -->
-  <rect x="60" y="50" width="18" height="218" rx="3" fill="#8B6914" stroke="#5a4008" stroke-width="1.5"/>
+  <rect x="60" y="30" width="18" height="238" rx="3" fill="#8B6914" stroke="#5a4008" stroke-width="1.5"/>
   <!-- ===== 縦桟（右）===== -->
-  <rect x="200" y="50" width="18" height="218" rx="3" fill="#8B6914" stroke="#5a4008" stroke-width="1.5"/>
+  <rect x="200" y="30" width="18" height="238" rx="3" fill="#8B6914" stroke="#5a4008" stroke-width="1.5"/>
 
   <!-- ===== 踏み板4段（縦桟の手前・横方向・1枚板）===== -->
   <!-- 段1（最下部） -->
