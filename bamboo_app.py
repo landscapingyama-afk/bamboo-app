@@ -1444,44 +1444,49 @@ def _svg_step5_roller() -> str:
   <ellipse cx="74"  cy="88" rx="4" ry="7" fill="#66bb6a" stroke="#2e7d32" stroke-width="1"/>
   <ellipse cx="266" cy="88" rx="4" ry="7" fill="#66bb6a" stroke="#2e7d32" stroke-width="1"/>
 
-  <!-- ======== パイプ（竹を貫通してフレーム外に飛び出す）======== -->
-  <line x1="10" y1="46" x2="60" y2="46" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
-  <line x1="10" y1="60" x2="60" y2="60" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
-  <line x1="10" y1="74" x2="60" y2="74" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
-  <line x1="10" y1="88" x2="60" y2="88" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
-  <line x1="280" y1="46" x2="330" y2="46" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
-  <line x1="280" y1="60" x2="330" y2="60" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
-  <line x1="280" y1="74" x2="330" y2="74" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
-  <line x1="280" y1="88" x2="330" y2="88" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
+  <!-- ======== パイプ（フレーム内側から垂木ブロックまで・フレーム外に出ない）======== -->
+  <!-- フレーム内側x=74から垂木ブロック右端x=78まで（左側）、右側も同様 -->
+  <!-- 左：フレーム内側74〜垂木ブロック右端78 -->
+  <line x1="74" y1="46" x2="78" y2="46" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
+  <line x1="74" y1="60" x2="78" y2="60" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
+  <line x1="74" y1="74" x2="78" y2="74" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
+  <line x1="74" y1="88" x2="78" y2="88" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
+  <!-- 右：垂木ブロック左端262〜フレーム内側266 -->
+  <line x1="262" y1="46" x2="266" y2="46" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
+  <line x1="262" y1="60" x2="266" y2="60" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
+  <line x1="262" y1="74" x2="266" y2="74" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
+  <line x1="262" y1="88" x2="266" y2="88" stroke="#90a4ae" stroke-width="4" stroke-linecap="round"/>
 
-  <!-- ======== 垂木ブロック（立方体・横幅18px）上下でパイプを挟む ======== -->
+  <!-- ======== 垂木ブロック（立方体・横幅18px）フレーム側板の内側面に取付 ======== -->
+  <!-- 左側フレーム内側x=74。垂木ブロックはx=60〜78（フレーム内に収まる） -->
   <!-- 左側 上ブロック -->
-  <rect x="10" y="32" width="18" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
-  <polygon points="28,32 34,26 34,40 28,46" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
-  <polygon points="10,32 16,26 34,26 28,32" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
-  <text x="19" y="42" text-anchor="middle" font-size="6.5" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <rect x="62" y="32" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="76,32 82,26 82,40 76,46" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="62,32 68,26 82,26 76,32" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="69" y="42" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
   <!-- 左側 下ブロック -->
-  <rect x="10" y="88" width="18" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
-  <polygon points="28,88 34,82 34,96 28,102" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
-  <polygon points="10,88 16,82 34,82 28,88" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
-  <text x="19" y="98" text-anchor="middle" font-size="6.5" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <rect x="62" y="88" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="76,88 82,82 82,96 76,102" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="62,88 68,82 82,82 76,88" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="69" y="98" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
 
+  <!-- 右側フレーム内側x=266。垂木ブロックはx=258〜272（フレーム内） -->
   <!-- 右側 上ブロック -->
-  <rect x="296" y="32" width="18" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
-  <polygon points="314,32 320,26 320,40 314,46" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
-  <polygon points="296,32 302,26 320,26 314,32" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
-  <text x="305" y="42" text-anchor="middle" font-size="6.5" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <rect x="264" y="32" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="278,32 284,26 284,40 278,46" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="264,32 270,26 284,26 278,32" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="271" y="42" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
   <!-- 右側 下ブロック -->
-  <rect x="296" y="88" width="18" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
-  <polygon points="314,88 320,82 320,96 314,102" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
-  <polygon points="296,88 302,82 320,82 314,88" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
-  <text x="305" y="98" text-anchor="middle" font-size="6.5" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <rect x="264" y="88" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="278,88 284,82 284,96 278,102" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="264,88 270,82 284,82 278,88" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="271" y="98" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
 
   <!-- ビス（上下ブロックを締める） -->
-  <line x1="19" y1="46" x2="19" y2="88" stroke="#9e9e9e" stroke-width="1.5" stroke-dasharray="3,2"/>
-  <polygon points="16,56 22,56 19,62" fill="#757575" opacity="0.8"/>
-  <line x1="305" y1="46" x2="305" y2="88" stroke="#9e9e9e" stroke-width="1.5" stroke-dasharray="3,2"/>
-  <polygon points="302,56 308,56 305,62" fill="#757575" opacity="0.8"/>
+  <line x1="69" y1="46" x2="69" y2="88" stroke="#9e9e9e" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <polygon points="66,56 72,56 69,62" fill="#757575" opacity="0.8"/>
+  <line x1="271" y1="46" x2="271" y2="88" stroke="#9e9e9e" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <polygon points="268,56 274,56 271,62" fill="#757575" opacity="0.8"/>
 
   <!-- 凡例 -->
   <rect x="80" y="115" width="10" height="8" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1"/>
@@ -1711,62 +1716,58 @@ def _svg_step3_clamp() -> str:
   <!-- 木材フレーム底板 -->
   <rect x="18" y="126" width="128" height="14" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
 
-  <!-- 竹断面（全体・中央に配置） -->
+  <!-- 竹断面（中央・パイプ中心が見える） -->
   <ellipse cx="82" cy="100" rx="22" ry="22" fill="#4caf50" stroke="#2e7d32" stroke-width="2" opacity="0.88"/>
   <ellipse cx="82" cy="100" rx="13" ry="13" fill="#81c784" stroke="#388e3c" stroke-width="1" opacity="0.7"/>
 
-  <!-- パイプ断面（竹の中心を貫通） -->
+  <!-- 垂木ブロック左（立方体・高さ=竹外径44px・竹左端x=60に密着） -->
+  <!-- 正面: x=38〜60, y=78〜122  奥行き右上に8px -->
+  <rect x="38" y="78" width="22" height="44" rx="2" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
+  <polygon points="60,78 68,70 68,114 60,122" fill="#d7ccc8" stroke="#5d4037" stroke-width="1"/>
+  <polygon points="38,78 46,70 68,70 60,78" fill="#e0d5cf" stroke="#5d4037" stroke-width="1"/>
+  <!-- 竹の左端をブロックで隠す -->
+  <rect x="59" y="79" width="3" height="42" fill="#bcaaa4"/>
+  <text x="49" y="102" text-anchor="middle" font-size="7" fill="#4e342e" font-weight="bold" font-family="sans-serif">垂木</text>
+
+  <!-- 垂木ブロック右（立方体・竹右端x=104に密着） -->
+  <!-- 正面: x=104〜126, y=78〜122 -->
+  <rect x="104" y="78" width="22" height="44" rx="2" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
+  <polygon points="126,78 134,70 134,114 126,122" fill="#d7ccc8" stroke="#5d4037" stroke-width="1"/>
+  <polygon points="104,78 112,70 134,70 126,78" fill="#e0d5cf" stroke="#5d4037" stroke-width="1"/>
+  <rect x="104" y="79" width="3" height="42" fill="#bcaaa4"/>
+  <text x="115" y="102" text-anchor="middle" font-size="7" fill="#4e342e" font-weight="bold" font-family="sans-serif">垂木</text>
+
+  <!-- パイプ断面（竹の中心を貫通・固定） -->
   <ellipse cx="82" cy="100" rx="7" ry="7" fill="#90a4ae" stroke="#455a64" stroke-width="2"/>
   <ellipse cx="82" cy="100" rx="3.5" ry="3.5" fill="#cfd8dc" stroke="#607d8b" stroke-width="1"/>
+  <text x="82" y="88" text-anchor="middle" font-size="7.5" fill="#455a64" font-family="sans-serif">パイプ固定</text>
 
-  <!-- 垂木ブロック上（立方体・幅22px・竹の上を押さえる） -->
-  <rect x="71" y="70" width="22" height="22" rx="2" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
-  <!-- 立方体の奥行き表現 -->
-  <polygon points="93,70 100,63 100,85 93,92" fill="#d7ccc8" stroke="#5d4037" stroke-width="1"/>
-  <polygon points="71,70 78,63 100,63 93,70" fill="#e0d5cf" stroke="#5d4037" stroke-width="1"/>
-  <text x="82" y="84" text-anchor="middle" font-size="7" fill="#4e342e" font-weight="bold" font-family="sans-serif">垂木</text>
-
-  <!-- 垂木ブロック下（立方体・幅22px・竹の下を支える） -->
-  <rect x="71" y="108" width="22" height="22" rx="2" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
-  <polygon points="93,108 100,101 100,123 93,130" fill="#d7ccc8" stroke="#5d4037" stroke-width="1"/>
-  <polygon points="71,108 78,101 100,101 93,108" fill="#e0d5cf" stroke="#5d4037" stroke-width="1"/>
-  <text x="82" y="122" text-anchor="middle" font-size="7" fill="#4e342e" font-weight="bold" font-family="sans-serif">垂木</text>
-
-  <!-- 上下ブロックで竹の上下を隠す -->
-  <rect x="72" y="71" width="20" height="21" fill="#bcaaa4"/>
-  <rect x="72" y="109" width="20" height="21" fill="#bcaaa4"/>
-
-  <!-- パイプを再描画（ブロックより手前に表示） -->
-  <ellipse cx="82" cy="100" rx="7" ry="7" fill="#90a4ae" stroke="#455a64" stroke-width="2"/>
-  <ellipse cx="82" cy="100" rx="3.5" ry="3.5" fill="#cfd8dc" stroke="#607d8b" stroke-width="1"/>
-  <text x="94" y="97" font-size="7.5" fill="#455a64" font-family="sans-serif">パイプ固定</text>
-
-  <!-- 上下挟み込みを示す矢印 -->
-  <line x1="82" y1="58" x2="82" y2="70" stroke="#e53935" stroke-width="2"/>
-  <polygon points="78,70 86,70 82,76" fill="#e53935"/>
-  <line x1="82" y1="138" x2="82" y2="126" stroke="#e53935" stroke-width="2"/>
-  <polygon points="78,126 86,126 82,120" fill="#e53935"/>
-  <text x="115" y="56" font-size="7.5" fill="#c62828" font-family="sans-serif">上下から挟む</text>
+  <!-- 左右から挟む矢印 -->
+  <line x1="24" y1="100" x2="38" y2="100" stroke="#e53935" stroke-width="2"/>
+  <polygon points="38,96 38,104 44,100" fill="#e53935"/>
+  <line x1="140" y1="100" x2="126" y2="100" stroke="#e53935" stroke-width="2"/>
+  <polygon points="126,96 126,104 120,100" fill="#e53935"/>
+  <text x="82" y="65" text-anchor="middle" font-size="7.5" fill="#c62828" font-family="sans-serif">左右から挟む</text>
 
   <!-- 回転矢印 -->
-  <path d="M 100 84 A 22 22 0 0 1 104 100" fill="none" stroke="#1565c0" stroke-width="2"/>
-  <polygon points="103,100 110,93 98,90" fill="#1565c0"/>
-  <text x="110" y="82" font-size="8" fill="#1565c0" font-family="sans-serif">竹が回転</text>
+  <path d="M 98 82 A 20 20 0 0 1 102 98" fill="none" stroke="#1565c0" stroke-width="2"/>
+  <polygon points="101,98 108,91 96,88" fill="#1565c0"/>
+  <text x="82" y="130" text-anchor="middle" font-size="8" fill="#1565c0" font-family="sans-serif">竹が回転</text>
 
   <!-- 高さ寸法線（垂木高さ＝竹外径） -->
-  <line x1="22" y1="70" x2="22" y2="126" stroke="#e53935" stroke-width="1.2"/>
-  <line x1="18" y1="70" x2="26" y2="70" stroke="#e53935" stroke-width="1.2"/>
-  <line x1="18" y1="126" x2="26" y2="126" stroke="#e53935" stroke-width="1.2"/>
-  <text x="1" y="95" font-size="7" fill="#c62828" font-family="sans-serif">高さ</text>
-  <text x="1" y="105" font-size="7" fill="#c62828" font-family="sans-serif">＝竹径</text>
+  <line x1="22" y1="78" x2="22" y2="122" stroke="#e53935" stroke-width="1.2"/>
+  <line x1="18" y1="78" x2="26" y2="78" stroke="#e53935" stroke-width="1.2"/>
+  <line x1="18" y1="122" x2="26" y2="122" stroke="#e53935" stroke-width="1.2"/>
+  <text x="1" y="97" font-size="7" fill="#c62828" font-family="sans-serif">高さ</text>
+  <text x="1" y="107" font-size="7" fill="#c62828" font-family="sans-serif">＝竹径</text>
 
-  <!-- ビス（上ブロックから底板へ） -->
-  <line x1="65" y1="126" x2="65" y2="135" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
-  <polygon points="61,135 69,135 65,142" fill="#757575"/>
-  <line x1="99" y1="126" x2="99" y2="135" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
-  <polygon points="95,135 103,135 99,142" fill="#757575"/>
+  <!-- ビス（ブロックを底板へ） -->
+  <line x1="49" y1="122" x2="49" y2="131" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="45,131 53,131 49,138" fill="#757575"/>
+  <line x1="115" y1="122" x2="115" y2="131" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="111,131 119,131 115,138" fill="#757575"/>
 
-  <text x="55" y="157" font-size="8" fill="#2e7d32" font-family="sans-serif">竹（フリー回転）</text>
+  <text x="82" y="155" text-anchor="middle" font-size="8" fill="#2e7d32" font-family="sans-serif">竹（フリー回転）</text>
 
   <!-- ============================================================ -->
   <!-- 右：側面図（垂木ブロックをフレーム板の上に載せ・縦を半分）  -->
@@ -2930,21 +2931,35 @@ def render_junglegym_construction_guide(diameter_cm: float):
 
 
 def _svg_step8_ladder() -> str:
-    """⑧ 梯子（階段）正面図：縦桟2本＋踏み板＋上部ストッパー板（反対側）"""
+    """⑧ 梯子（階段）正面図：縦桟2本＋踏み板＋上部ストッパー板（縦桟の奥・背面）"""
     return '''<svg viewBox="0 0 340 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
   <text x="170" y="14" text-anchor="middle" font-size="11" font-weight="bold" fill="#2d6a2d" font-family="sans-serif">階段（梯子）製作図</text>
-  <text x="170" y="26" text-anchor="middle" font-size="8" fill="#1565c0" font-family="sans-serif">正面図・下部は地面と平行／上部にストッパー板</text>
+  <text x="170" y="26" text-anchor="middle" font-size="8" fill="#1565c0" font-family="sans-serif">正面図・上部ストッパー板は縦桟の奥（背面）に取付</text>
 
   <!-- 地面 -->
   <rect x="0" y="268" width="340" height="18" fill="#d7ccc8"/>
   <line x1="0" y1="268" x2="340" y2="268" stroke="#795548" stroke-width="2"/>
 
-  <!-- ===== 縦桟（左）===== -->
+  <!-- ===== 上部ストッパー板（縦桟の奥・背面に取付＝奥行き感で表現）===== -->
+  <!-- 縦桟より奥にある板を3D風に描く。縦桟の上端よりやや上から、奥に引っ込んで見える -->
+  <!-- 正面板（薄い色・奥にある印象） -->
+  <rect x="52" y="38" width="174" height="18" rx="2" fill="#bf360c" stroke="#7f0000" stroke-width="1.5" opacity="0.85"/>
+  <!-- 上面（奥行き感・右上にずらした台形） -->
+  <polygon points="52,38 226,38 234,30 60,30" fill="#e64a19" stroke="#7f0000" stroke-width="1" opacity="0.9"/>
+  <!-- 右側面（奥行き感） -->
+  <polygon points="226,38 234,30 234,48 226,56" fill="#a33200" stroke="#7f0000" stroke-width="1" opacity="0.9"/>
+  <text x="139" y="51" text-anchor="middle" font-size="8" fill="white" font-weight="bold" font-family="sans-serif">ストッパー板（縦桟の奥に取付）</text>
+
+  <!-- ストッパー板の説明矢印 -->
+  <line x1="245" y1="39" x2="260" y2="32" stroke="#e53935" stroke-width="1.5"/>
+  <text x="295" y="30" text-anchor="middle" font-size="7.5" fill="#c62828" font-weight="bold" font-family="sans-serif">ローラーに引っかかる！</text>
+
+  <!-- ===== 縦桟（左）・踏み板より手前に描く ===== -->
   <rect x="60" y="50" width="18" height="218" rx="3" fill="#8B6914" stroke="#5a4008" stroke-width="1.5"/>
   <!-- ===== 縦桟（右）===== -->
   <rect x="200" y="50" width="18" height="218" rx="3" fill="#8B6914" stroke="#5a4008" stroke-width="1.5"/>
 
-  <!-- ===== 踏み板4段（横方向・1枚板）===== -->
+  <!-- ===== 踏み板4段（縦桟の手前・横方向・1枚板）===== -->
   <!-- 段1（最下部） -->
   <rect x="58" y="228" width="162" height="12" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.4"/>
   <!-- 段2 -->
@@ -2964,34 +2979,19 @@ def _svg_step8_ladder() -> str:
   <circle cx="70" cy="96" r="3" fill="#555" stroke="#333" stroke-width="0.8"/>
   <circle cx="208" cy="96" r="3" fill="#555" stroke="#333" stroke-width="0.8"/>
 
-  <!-- ===== 下部横板（地面に平行・足ぶれ防止）===== -->
-  <rect x="58" y="253" width="162" height="15" rx="2" fill="#c8913a" stroke="#5a4008" stroke-width="1.5"/>
-  <text x="139" y="264" text-anchor="middle" font-size="7.5" fill="white" font-weight="bold" font-family="sans-serif">下部横板（地面と平行）</text>
-
-  <!-- ===== 上部ストッパー板（踏み板と反対側＝縦桟の裏面に突き出す）===== -->
-  <!-- 縦桟上端より上に飛び出す厚板：踏み板が付いていない側（後ろ側）に取り付け -->
-  <!-- 正面図では縦桟の上端に横板として表現、色を強調 -->
-  <rect x="40" y="36" width="198" height="20" rx="3" fill="#e65100" stroke="#bf360c" stroke-width="2"/>
-  <text x="139" y="50" text-anchor="middle" font-size="8" fill="white" font-weight="bold" font-family="sans-serif">上部ストッパー板（踏み板の反対側に取付）</text>
-
-  <!-- ストッパー板の強調矢印 -->
-  <line x1="139" y1="34" x2="139" y2="22" stroke="#e53935" stroke-width="1.5"/>
-  <polygon points="135,22 143,22 139,16" fill="#e53935"/>
-  <text x="139" y="13" text-anchor="middle" font-size="7.5" fill="#c62828" font-weight="bold" font-family="sans-serif">← ローラーに引っかかる！</text>
-
   <!-- 寸法線（踏み板間隔） -->
   <line x1="234" y1="234" x2="234" y2="194" stroke="#1565c0" stroke-width="1.2"/>
   <line x1="230" y1="234" x2="238" y2="234" stroke="#1565c0" stroke-width="1.2"/>
   <line x1="230" y1="194" x2="238" y2="194" stroke="#1565c0" stroke-width="1.2"/>
-  <text x="248" y="217" text-anchor="middle" font-size="7.5" fill="#1565c0" font-family="sans-serif">20〜25cm</text>
-  <text x="248" y="227" text-anchor="middle" font-size="7.5" fill="#1565c0" font-family="sans-serif">等間隔</text>
+  <text x="253" y="217" text-anchor="middle" font-size="7.5" fill="#1565c0" font-family="sans-serif">20〜25cm</text>
+  <text x="253" y="227" text-anchor="middle" font-size="7.5" fill="#1565c0" font-family="sans-serif">等間隔</text>
 
   <!-- 注意ボックス -->
-  <rect x="248" y="50" width="86" height="52" rx="4" fill="#fff8e1" stroke="#f57f17" stroke-width="1.2"/>
-  <text x="291" y="64" text-anchor="middle" font-size="7.5" fill="#e65100" font-weight="bold" font-family="sans-serif">ストッパー板</text>
-  <text x="291" y="76" text-anchor="middle" font-size="7" fill="#37474f" font-family="sans-serif">踏み板と反対側</text>
-  <text x="291" y="87" text-anchor="middle" font-size="7" fill="#37474f" font-family="sans-serif">厚さ18mm以上</text>
-  <text x="291" y="98" text-anchor="middle" font-size="7" fill="#c62828" font-weight="bold" font-family="sans-serif">ズレ防止に必須！</text>
+  <rect x="240" y="50" width="94" height="56" rx="4" fill="#fff8e1" stroke="#f57f17" stroke-width="1.2"/>
+  <text x="287" y="65" text-anchor="middle" font-size="7.5" fill="#e65100" font-weight="bold" font-family="sans-serif">ストッパー板</text>
+  <text x="287" y="77" text-anchor="middle" font-size="7" fill="#37474f" font-family="sans-serif">踏み板と反対側</text>
+  <text x="287" y="88" text-anchor="middle" font-size="7" fill="#37474f" font-family="sans-serif">厚さ18mm以上</text>
+  <text x="287" y="99" text-anchor="middle" font-size="7" fill="#c62828" font-weight="bold" font-family="sans-serif">ズレ防止に必須！</text>
 </svg>'''
 
 
