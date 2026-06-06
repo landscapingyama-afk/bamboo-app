@@ -2809,6 +2809,90 @@ def render_junglegym_construction_guide(diameter_cm: float):
     )
 
 
+def _svg_step9_stairs() -> str:
+    """⑨ 上り用階段の製作・取り付け"""
+    return '''<svg viewBox="0 0 340 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
+  <text x="170" y="15" text-anchor="middle" font-size="11" font-weight="bold" fill="#2d6a2d" font-family="sans-serif">上り用階段の製作・取り付け</text>
+
+  <!-- 地面 -->
+  <rect x="0" y="255" width="340" height="20" fill="#d7ccc8"/>
+  <line x1="0" y1="255" x2="340" y2="255" stroke="#795548" stroke-width="2"/>
+
+  <!-- 支柱（滑り台本体・左） -->
+  <rect x="30" y="60" width="16" height="195" rx="3" fill="#8B6914" stroke="#5a4008" stroke-width="1.5"/>
+  <!-- 支柱（右） -->
+  <rect x="240" y="60" width="16" height="195" rx="3" fill="#8B6914" stroke="#5a4008" stroke-width="1.5"/>
+
+  <!-- 斜面フレーム（上部台） -->
+  <rect x="30" y="58" width="226" height="14" rx="3" fill="#8B6914" stroke="#5a4008" stroke-width="1.2"/>
+
+  <!-- 階段の縦桟（左右の斜め支柱）：下端は地面、上端は台に接続 -->
+  <!-- 左縦桟：上端(46,72) 下端(30,255) -->
+  <line x1="46" y1="72" x2="30" y2="255" stroke="#8B6914" stroke-width="10" stroke-linecap="round"/>
+  <!-- 右縦桟：上端(100,72) 下端(84,255) -->
+  <line x1="100" y1="72" x2="84" y2="255" stroke="#8B6914" stroke-width="10" stroke-linecap="round"/>
+
+  <!-- 上端を斜めにカット（ローラー設置面に合わせる）の説明用マーカー -->
+  <circle cx="46" cy="72" r="8" fill="#e53935" opacity="0.75" stroke="#b71c1c" stroke-width="1.5"/>
+  <text x="46" y="76" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">斜切</text>
+  <circle cx="100" cy="72" r="8" fill="#e53935" opacity="0.75" stroke="#b71c1c" stroke-width="1.5"/>
+  <text x="100" y="76" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">斜切</text>
+
+  <!-- 踏み板（1枚板・横）：3段 -->
+  <!-- 1段目（下） -->
+  <rect x="28" y="215" width="74" height="10" rx="2" fill="#8B6914" stroke="#5a4008" stroke-width="1.2"/>
+  <line x1="30" y1="220" x2="100" y2="220" stroke="#5a4008" stroke-width="0.5" opacity="0.4"/>
+  <!-- 2段目（中） -->
+  <rect x="28" y="168" width="74" height="10" rx="2" fill="#8B6914" stroke="#5a4008" stroke-width="1.2"/>
+  <line x1="30" y1="173" x2="100" y2="173" stroke="#5a4008" stroke-width="0.5" opacity="0.4"/>
+  <!-- 3段目（上） -->
+  <rect x="28" y="121" width="74" height="10" rx="2" fill="#8B6914" stroke="#5a4008" stroke-width="1.2"/>
+  <line x1="30" y1="126" x2="100" y2="126" stroke="#5a4008" stroke-width="0.5" opacity="0.4"/>
+
+  <!-- ビス印（各踏み板 左右2本） -->
+  <circle cx="36" cy="220" r="3" fill="#888" stroke="#555" stroke-width="0.8"/>
+  <circle cx="92" cy="220" r="3" fill="#888" stroke="#555" stroke-width="0.8"/>
+  <circle cx="36" cy="173" r="3" fill="#888" stroke="#555" stroke-width="0.8"/>
+  <circle cx="92" cy="173" r="3" fill="#888" stroke="#555" stroke-width="0.8"/>
+  <circle cx="36" cy="126" r="3" fill="#888" stroke="#555" stroke-width="0.8"/>
+  <circle cx="92" cy="126" r="3" fill="#888" stroke="#555" stroke-width="0.8"/>
+
+  <!-- 足ぶれ防止板（縦1枚板、下部） -->
+  <rect x="28" y="225" width="74" height="30" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2" opacity="0.85"/>
+  <text x="65" y="244" text-anchor="middle" font-size="7" fill="white" font-weight="bold" font-family="sans-serif">足ぶれ防止板</text>
+
+  <!-- 寸法矢印（踏み板間隔） -->
+  <line x1="112" y1="215" x2="112" y2="178" stroke="#1565c0" stroke-width="1.2"/>
+  <line x1="108" y1="215" x2="116" y2="215" stroke="#1565c0" stroke-width="1.2"/>
+  <line x1="108" y1="178" x2="116" y2="178" stroke="#1565c0" stroke-width="1.2"/>
+  <text x="124" y="200" font-size="8" fill="#1565c0" font-family="sans-serif">等間隔</text>
+
+  <!-- 右側：断面詳細（踏み板とビス固定イメージ） -->
+  <text x="230" y="100" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">踏み板固定 詳細</text>
+  <!-- 縦桟（断面） -->
+  <rect x="190" y="108" width="18" height="120" rx="3" fill="#8B6914" stroke="#5a4008" stroke-width="1.5"/>
+  <!-- 踏み板（断面） -->
+  <rect x="208" y="148" width="55" height="12" rx="2" fill="#8B6914" stroke="#5a4008" stroke-width="1.2"/>
+  <!-- ビス（矢印） -->
+  <line x1="215" y1="148" x2="215" y2="132" stroke="#555" stroke-width="2" stroke-dasharray="3,2"/>
+  <polygon points="212,132 218,132 215,126" fill="#555"/>
+  <text x="222" y="130" font-size="7.5" fill="#37474f" font-family="sans-serif">コーススレッド</text>
+  <text x="222" y="140" font-size="7.5" fill="#37474f" font-family="sans-serif">65mm以上</text>
+  <!-- 下穴マーク -->
+  <circle cx="215" cy="148" r="4" fill="#e53935" opacity="0.7" stroke="#b71c1c" stroke-width="1"/>
+  <text x="232" y="157" font-size="7" fill="#c62828" font-family="sans-serif">下穴必須</text>
+
+  <!-- 注意ラベル（上端斜め切断） -->
+  <rect x="140" y="185" width="186" height="36" rx="4" fill="#fff8e1" stroke="#f57f17" stroke-width="1.2"/>
+  <text x="233" y="199" text-anchor="middle" font-size="8" fill="#e65100" font-weight="bold" font-family="sans-serif">⚠️ 上端はローラー面の角度に</text>
+  <text x="233" y="211" text-anchor="middle" font-size="8" fill="#e65100" font-weight="bold" font-family="sans-serif">合わせて斜めにカットする</text>
+
+  <!-- 完成ラベル -->
+  <rect x="140" y="228" width="186" height="22" rx="4" fill="#e8f5e9" stroke="#388e3c" stroke-width="1.2"/>
+  <text x="233" y="243" text-anchor="middle" font-size="8.5" fill="#1b5e20" font-weight="bold" font-family="sans-serif">全踏み板をビスで固定し完成！</text>
+</svg>'''
+
+
 def render_slide_construction_guide(diameter_cm: float):
     """
     滑り台の製作手順ガイドを表示する（全指摘反映・安全設計版）。
@@ -2990,6 +3074,38 @@ def render_slide_construction_guide(diameter_cm: float):
                 "【定期点検（月1回）】竹の劣化・虫食い・腐れ・接合部の緩みを確認。",
                 "異常を発見したら即座に使用を禁止し、修理または撤去する。",
                 "雨ざらしは竹の劣化を早めるため、使用後はシートで覆うか屋根下に保管する。",
+            ],
+        },
+        {
+            "title": "⑨ 上り用階段を製作・取り付ける",
+            "icon": "🪜",
+            "svg": _svg_step9_stairs,
+            "desc": (
+                "滑り台の上り口に**木製階段**を取り付けます。\n\n"
+                "**縦桟（支柱）の製作：**\n"
+                "左右2本の縦桟（板材）を用意します。"
+                "上端はローラー設置面（斜面フレーム）の**傾斜角に合わせて斜めにカット**します。"
+                "斜めにカットすることで縦桟がローラー面にぴったり密着し、"
+                "階段全体がぐらつかずに安定します。\n\n"
+                "**踏み板（ステップ）の製作：**\n"
+                "踏み板は**1枚板**を使用します。"
+                "使用者の体重がかかっても足がぶれないよう、板はしっかりした厚さのもの（目安：厚さ18mm以上）を選んでください。"
+                "踏み板間隔は均等に（目安：20〜25cm）し、子どもが登りやすい段数を確保します。\n\n"
+                "**足ぶれ防止板：**\n"
+                "最下段の縦桟の下部に**縦方向に板を1枚追加**し、"
+                "足がずれないようにします。高さによっては中間にも追加してください。\n\n"
+                "**すべての踏み板と縦桟はコーススレッドビスでしっかり固定します。**"
+            ),
+            "points": [
+                "縦桟の上端はローラー面（斜面）の傾斜角と同じ角度で斜めにカットする（ノコギリ使用、保護具着用）。",
+                "斜めカットの角度は滑り台の傾斜角（arctan(高さ÷水平長さ）と同じ。",
+                "踏み板は厚さ18mm以上の板材を使用し、足をのせたときにたわまないことを確認する。",
+                "踏み板間隔は均等に20〜25cm程度とし、子どもが無理なく1段ずつ登れる高さにする。",
+                "踏み板はビス打ち前に下穴をあける（木材の割れ防止）。コーススレッド65mm以上を各端2本ずつ固定。",
+                "足ぶれ防止板：最下部（地面付近）に縦方向の板を追加する。高さが80cm以上の場合は中間にも1枚追加する。",
+                "縦桟の下端が地面に直接触れる場合は腐れ防止のため防腐剤を塗布するか、接地部を金属プレートで保護する。",
+                "完成後、大人が全体重をかけて階段を踏み、ぐらつきや踏み板のたわみがないことを確認してから使用開始する。",
+                "ブラウン系の着色防腐剤を全面に塗布すると耐久性が大幅に向上する（塗布後は完全乾燥を待つ）。",
             ],
         },
     ]
