@@ -1467,21 +1467,21 @@ def _svg_step5_roller() -> str:
   <polygon points="76,32 82,26 82,40 76,46" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
   <polygon points="62,32 68,26 82,26 76,32" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
   <text x="69" y="42" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
-  <!-- 左 ブロック2 y=46 -->
-  <rect x="62" y="46" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
-  <polygon points="76,46 82,40 82,54 76,60" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
-  <polygon points="62,46 68,40 82,40 76,46" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
-  <text x="69" y="56" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
-  <!-- 左 ブロック3 y=60 -->
-  <rect x="62" y="60" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
-  <polygon points="76,60 82,54 82,68 76,74" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
-  <polygon points="62,60 68,54 82,54 76,60" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
-  <text x="69" y="70" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
-  <!-- 左 ブロック4 y=74 -->
-  <rect x="62" y="74" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
-  <polygon points="76,74 82,68 82,82 76,88" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
-  <polygon points="62,74 68,68 82,68 76,74" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
-  <text x="69" y="84" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <!-- 左 ブロック2 y=54 -->
+  <rect x="62" y="54" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="76,54 82,48 82,62 76,68" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="62,54 68,48 82,48 76,54" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="69" y="64" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <!-- 左 ブロック3 y=68 -->
+  <rect x="62" y="68" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="76,68 82,62 82,76 76,82" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="62,68 68,62 82,62 76,68" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="69" y="78" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <!-- 左 ブロック4 y=82 -->
+  <rect x="62" y="82" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="76,82 82,76 82,90 76,96" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="62,82 68,76 82,76 76,82" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="69" y="92" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
   <!-- 左 ブロック5（最下）y=102 -->
   <rect x="62" y="102" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
   <polygon points="76,102 82,96 82,110 76,116" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
@@ -1494,21 +1494,21 @@ def _svg_step5_roller() -> str:
   <polygon points="278,32 284,26 284,40 278,46" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
   <polygon points="264,32 270,26 284,26 278,32" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
   <text x="271" y="42" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
-  <!-- 右 ブロック2 y=46 -->
-  <rect x="264" y="46" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
-  <polygon points="278,46 284,40 284,54 278,60" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
-  <polygon points="264,46 270,40 284,40 278,46" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
-  <text x="271" y="56" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
-  <!-- 右 ブロック3 y=60 -->
-  <rect x="264" y="60" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
-  <polygon points="278,60 284,54 284,68 278,74" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
-  <polygon points="264,60 270,54 284,54 278,60" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
-  <text x="271" y="70" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
-  <!-- 右 ブロック4 y=74 -->
-  <rect x="264" y="74" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
-  <polygon points="278,74 284,68 284,82 278,88" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
-  <polygon points="264,74 270,68 284,68 278,74" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
-  <text x="271" y="84" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <!-- 右 ブロック2 y=54 -->
+  <rect x="264" y="54" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="278,54 284,48 284,62 278,68" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="264,54 270,48 284,48 278,54" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="271" y="64" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <!-- 右 ブロック3 y=68 -->
+  <rect x="264" y="68" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="278,68 284,62 284,76 278,82" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="264,68 270,62 284,62 278,68" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="271" y="78" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
+  <!-- 右 ブロック4 y=82 -->
+  <rect x="264" y="82" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
+  <polygon points="278,82 284,76 284,90 278,96" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
+  <polygon points="264,82 270,76 284,76 278,82" fill="#d4aa4a" stroke="#5a4008" stroke-width="1"/>
+  <text x="271" y="92" text-anchor="middle" font-size="6" fill="white" font-weight="bold" font-family="sans-serif">垂木</text>
   <!-- 右 ブロック5（最下）y=102 -->
   <rect x="264" y="102" width="14" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.5"/>
   <polygon points="278,102 284,96 284,110 278,116" fill="#c49a3a" stroke="#5a4008" stroke-width="1"/>
