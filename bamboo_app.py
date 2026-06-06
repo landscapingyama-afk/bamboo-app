@@ -690,36 +690,36 @@ class SlidePlugin(ToolPlugin):
             s += ell(bx, by, T*self.SLAT_ELLIPSE_RX, T/2, BF, BD, 0.6)
             s += ell(bx, by, T*self.SLAT_ELLIPSE_RX*0.5, T/2*0.5, BM, BD, 0.35, 0.6)
         s += bamboo_slat(sx, sy+ny*T*self.HANDRAIL_OFFSET, ex, gy+ny*T*self.HANDRAIL_OFFSET, T*self.HANDRAIL_WIDTH)
-        # ── 階段（上り用・縦桟+踏み板）──
-        # 階段は左側支柱（sx, sy〜gy）に取り付く。縦桟の幅はフレーム幅の20%程度
-        stair_w = max(lw * 0.7, 4)   # 縦桟の太さ（フレーム支柱より細め）
-        stair_x0 = sx - stair_w - lw   # 左縦桟の左端X
-        stair_x1 = sx - lw             # 左縦桟の右端X（=支柱左端）
-        # 踏み板の段数：高さに応じて2〜4段
+        # ── 階段（上り用・縦桟+踏み板・約30度傾けて設置）──
+        # 階段は左側支柱（sx,gy）から斜め左下へ広がる
+        # 傾き約30度：縦桟の下端は上端より左にずれる
+        stair_h = sh   # 縦桟の高さ（滑り台と同じ高さ）
+        stair_lean = stair_h * math.tan(math.radians(30))  # 30度傾きによる水平オフセット
+        stair_w = max(lw * 0.65, 3.5)   # 縦桟の太さ
+        # 左縦桟：上端(sx-lw, sy)  下端(sx-lw-stair_lean, gy)
+        lc_tx = sx - lw;           lc_ty = sy
+        lc_bx = sx - lw - stair_lean; lc_by = gy
+        # 右縦桟：上端(sx-lw+stair_w, sy)  下端(sx-lw+stair_w-stair_lean, gy)
+        rc_tx = lc_tx + stair_w;   rc_ty = sy
+        rc_bx = lc_bx + stair_w;  rc_by = gy
+        # 縦桟（線として描画）
+        s += (f'<line x1="{lc_tx:.2f}" y1="{lc_ty:.2f}" x2="{lc_bx:.2f}" y2="{lc_by:.2f}"'
+              f' stroke="{WF}" stroke-width="{stair_w:.2f}" stroke-linecap="round"/>')
+        s += (f'<line x1="{rc_tx:.2f}" y1="{rc_ty:.2f}" x2="{rc_bx:.2f}" y2="{rc_by:.2f}"'
+              f' stroke="{WD}" stroke-width="{stair_w*0.7:.2f}" stroke-linecap="round"/>')
+        # 踏み板（各段：横方向、縦桟の途中点を結ぶ）
         stair_steps = max(2, min(4, round(H / 0.3)))
+        step_h_px = max(T * 0.22, 2)
         for si in range(stair_steps):
-            # 各段の地面からの高さ比（等間隔）
             frac = (si + 1) / (stair_steps + 1)
-            step_y = gy - sh * frac
-            # 踏み板（横方向の1枚板）：左縦桟から右縦桟（sx直前）まで
-            step_w = stair_x1 - stair_x0 + stair_w * 0.5
-            step_h = max(T * 0.25, 2.5)
-            s += (f'<rect x="{stair_x0:.2f}" y="{step_y - step_h/2:.2f}"'
-                  f' width="{step_w:.2f}" height="{step_h:.2f}" rx="1"'
-                  f' fill="{WF}" stroke="{WD}" stroke-width="0.7"/>')
-        # 左縦桟（垂直）
-        s += (f'<rect x="{stair_x0:.2f}" y="{sy:.2f}"'
-              f' width="{stair_w:.2f}" height="{sh:.2f}" rx="1.5"'
-              f' fill="{WF}" stroke="{WD}" stroke-width="0.8"/>')
-        # 右縦桟（支柱左端に沿う）
-        s += (f'<rect x="{stair_x1 - stair_w*0.6:.2f}" y="{sy:.2f}"'
-              f' width="{stair_w*0.6:.2f}" height="{sh:.2f}" rx="1.5"'
-              f' fill="{WF}" stroke="{WD}" stroke-width="0.8"/>')
-        # 足ぶれ防止板（最下部・横方向）
-        anti_slip_h = max(T * 0.3, 3)
-        s += (f'<rect x="{stair_x0:.2f}" y="{gy - anti_slip_h:.2f}"'
-              f' width="{stair_w * 0.5 + stair_w:.2f}" height="{anti_slip_h:.2f}" rx="1"'
-              f' fill="{WD}" stroke="{WD}" stroke-width="0.6" opacity="0.85"/>')
+            # 左縦桟上の点
+            px_l = lc_tx + (lc_bx - lc_tx) * frac
+            py_l = lc_ty + (lc_by - lc_ty) * frac
+            # 右縦桟上の点
+            px_r = rc_tx + (rc_bx - rc_tx) * frac
+            py_r = rc_ty + (rc_by - rc_ty) * frac
+            s += (f'<line x1="{px_l:.2f}" y1="{py_l:.2f}" x2="{px_r:.2f}" y2="{py_r:.2f}"'
+                  f' stroke="{WF}" stroke-width="{step_h_px:.2f}" stroke-linecap="round"/>')
         # ── 荷重集中点マーカー（支点・フレーム接合部）──
         s += load_marker(sx, gy, r=9, label="支点・接合注意")
         s += load_marker(ex, gy, r=9, label="支点・接合注意", label_side="left")
@@ -2928,10 +2928,6 @@ def _svg_step9_stairs() -> str:
   <circle cx="141" cy="115" r="3" fill="#555" stroke="#333" stroke-width="0.8"/>
   <circle cx="195" cy="115" r="3" fill="#555" stroke="#333" stroke-width="0.8"/>
 
-  <!-- 足ぶれ防止板（最下部・横方向） -->
-  <line x1="60" y1="255" x2="120" y2="255" stroke="#c8913a" stroke-width="9" stroke-linecap="round"/>
-  <text x="90" y="252" text-anchor="middle" font-size="7" fill="#5a4008" font-weight="bold" font-family="sans-serif">足ぶれ防止板</text>
-
   <!-- 注意ラベル（上端斜め切断） -->
   <rect x="4" y="55" width="140" height="24" rx="4" fill="#fff8e1" stroke="#f57f17" stroke-width="1.2"/>
   <text x="74" y="66" text-anchor="middle" font-size="7.5" fill="#e65100" font-weight="bold" font-family="sans-serif">⚠️ 上端はローラー面の</text>
@@ -3068,7 +3064,7 @@ def render_slide_construction_guide(diameter_cm: float):
             "icon": "🖐️",
             "svg": _svg_step6_handrail_v2,
             "desc": (
-                "ローラー面が完成したら、**垂木ブロックの上**に手すり竹を取り付けます。\n\n"
+                "ローラー面が完成したら、手すり竹を取り付けます。\n\n"
                 "**固定手順：**\n"
                 "① まず竹に**ドリルで貫通穴をあける**（ビットは使用するビスより細いサイズ）。\n"
                 "② 貫通穴を通して**竹とフレーム設置面に長ビスを打ち込み**固定する。\n\n"
@@ -3076,7 +3072,15 @@ def render_slide_construction_guide(diameter_cm: float):
                 "**垂木ブロックのカバー板：**\n"
                 "垂木ブロックは突起しており触れると危険なため、フレームの**両サイドに1枚ずつ、計2枚の板でカバー**を取り付けます。"
                 "板の両端は地面に垂直にまっすぐカットします。"
-                "板の高さは垂木ブロックの高さに合わせてください。"
+                "板の高さは垂木ブロックの高さに合わせてください。\n\n"
+                "**縦桟（支柱）の製作：**\n"
+                "階段用に左右2本の縦桟（板材）を用意します。"
+                "上端はローラー設置面（斜面フレーム）の**傾斜角に合わせて斜めにカット**します。"
+                "斜めにカットすることで縦桟がローラー面にぴったり密着し、"
+                "階段全体がぐらつかずに安定します。\n\n"
+                "**足ぶれ防止板：**\n"
+                "最下段（地面付近）の縦桟の間に**横方向に板を1枚渡し**、"
+                "足がずれないようにします。高さが80cm以上の場合は中間にも1枚追加してください。"
             ),
             "points": [
                 "手すり竹はドリルで貫通穴をあけてから長ビス（コーススレッド90mm以上）で固定する。",
@@ -3085,7 +3089,9 @@ def render_slide_construction_guide(diameter_cm: float):
                 "手すりを強く押しても動かないことを確認してから使用を開始する。",
                 "【垂木カバー板】フレーム左右両サイドに板を1枚ずつ（計2枚）取り付ける。板の両端は垂直にカット。",
                 "【垂木カバー板】板の高さ＝垂木ブロックの高さ。ローラー面と同じ高さになるよう揃える。",
-                "【垂木カバー板】カバー板もビスでフレームにしっかり固定し、子どもが触れてもずれないようにする。",
+                "【縦桟】上端はローラー面（斜面）の傾斜角と同じ角度で斜めにカットする（ノコギリ使用、保護具着用）。",
+                "【縦桟】斜めカットの角度は滑り台の傾斜角（arctan(高さ÷水平長さ)）と同じ。",
+                "【足ぶれ防止板】最下部（地面付近）の縦桟の間に横方向の板を渡す。高さが80cm以上の場合は中間にも1枚追加する。",
             ],
         },
         {
@@ -3124,44 +3130,18 @@ def render_slide_construction_guide(diameter_cm: float):
             ],
         },
         {
-            "title": "⑧ 上り用階段を製作する",
-            "icon": "🪜",
+            "title": "⑧ 階段を取り付け、全体を組み上げて使用前安全点検を行う",
+            "icon": "🎉",
             "svg": _svg_step9_stairs,
+            "svg2": _svg_step8_complete,
             "desc": (
-                "滑り台の上り口に取り付ける**木製階段**を製作します。\n\n"
-                "**縦桟（支柱）の製作：**\n"
-                "左右2本の縦桟（板材）を用意します。"
-                "上端はローラー設置面（斜面フレーム）の**傾斜角に合わせて斜めにカット**します。"
-                "斜めにカットすることで縦桟がローラー面にぴったり密着し、"
-                "階段全体がぐらつかずに安定します。\n\n"
+                "製作した階段を滑り台に取り付けます。\n\n"
                 "**踏み板（ステップ）の製作：**\n"
                 "踏み板は**1枚板**を使用します。"
                 "使用者の体重がかかっても足がぶれないよう、板はしっかりした厚さのもの（目安：厚さ18mm以上）を選んでください。"
                 "踏み板間隔は均等に（目安：20〜25cm）し、子どもが登りやすい段数を確保します。\n\n"
-                "**足ぶれ防止板：**\n"
-                "最下段（地面付近）の縦桟の間に**横方向に板を1枚渡し**、"
-                "足がずれないようにします。高さが80cm以上の場合は中間にも1枚追加してください。\n\n"
                 "**すべての踏み板と縦桟はコーススレッドビスでしっかり固定します。**\n\n"
-                "完成したらブラウン系の**着色防腐剤を全面に塗布**して耐久性を上げましょう。"
-            ),
-            "points": [
-                "縦桟の上端はローラー面（斜面）の傾斜角と同じ角度で斜めにカットする（ノコギリ使用、保護具着用）。",
-                "斜めカットの角度は滑り台の傾斜角（arctan(高さ÷水平長さ)）と同じ。",
-                "踏み板は厚さ18mm以上の板材を使用し、足をのせたときにたわまないことを確認する。",
-                "踏み板間隔は均等に20〜25cm程度とし、子どもが無理なく1段ずつ登れる高さにする。",
-                "踏み板はビス打ち前に下穴をあける（木材の割れ防止）。コーススレッド65mm以上を各端2本ずつ固定。",
-                "足ぶれ防止板：最下部（地面付近）の縦桟の間に横方向の板を渡す。高さが80cm以上の場合は中間にも1枚追加する。",
-                "縦桟の下端が地面に直接触れる場合は腐れ防止のため防腐剤を塗布するか、接地部を金属プレートで保護する。",
-                "完成後、大人が全体重をかけて階段を踏み、ぐらつきや踏み板のたわみがないことを確認してから使用開始する。",
-                "ブラウン系の着色防腐剤を全面に塗布すると耐久性が大幅に向上する（塗布後は完全乾燥を待つ）。",
-            ],
-        },
-        {
-            "title": "⑨ 階段を取り付け、全体を組み上げて使用前安全点検を行う",
-            "icon": "🎉",
-            "svg": _svg_step8_complete,
-            "desc": (
-                "製作した階段を滑り台に取り付けます。\n\n"
+                "完成したらブラウン系の**着色防腐剤を全面に塗布**して耐久性を上げましょう。\n\n"
                 "**上部ストッパー板の取り付け：**\n"
                 "階段の上端（ローラー接触面側）に、踏み板とは**反対側（ローラー側）に向けて厚みのある板**を取り付けます。"
                 "この板がローラー部分に引っかかり、階段全体が前にずれるのを防ぐ**ストッパー**になります。\n\n"
@@ -3172,8 +3152,13 @@ def render_slide_construction_guide(diameter_cm: float):
                 "月1回以上の定期点検を習慣にしましょう。"
             ),
             "points": [
+                "踏み板は厚さ18mm以上の板材を使用し、足をのせたときにたわまないことを確認する。",
+                "踏み板間隔は均等に20〜25cm程度とし、子どもが無理なく1段ずつ登れる高さにする。",
+                "踏み板はビス打ち前に下穴をあける（木材の割れ防止）。コーススレッド65mm以上を各端2本ずつ固定。",
+                "縦桟の下端が地面に直接触れる場合は腐れ防止のため防腐剤を塗布するか、接地部を金属プレートで保護する。",
                 "【上部ストッパー板】階段上端のローラー接触面側に厚みのある板（目安：厚さ18mm以上）をビスで固定する。",
                 "【上部ストッパー板】板がローラー竹に引っかかってずれないことを手で押して確認する。",
+                "ブラウン系の着色防腐剤を全面に塗布すると耐久性が大幅に向上する（塗布後は完全乾燥を待つ）。",
                 "【使用前点検】ガタつき・竹の割れ・ビス緩み・突起・バリがないか確認。",
                 "【使用前点検】支柱・手すり・階段を強く押してぐらつきがないか確認。",
                 "【使用前点検】階段のストッパー板がローラーに確実に引っかかっているか確認。",
@@ -3190,20 +3175,34 @@ def render_slide_construction_guide(diameter_cm: float):
     def _render_svg(svg_str: str):
         b64 = base64.b64encode(svg_str.encode("utf-8")).decode("utf-8")
         st.markdown(
-            f'<img src="data:image/svg+xml;base64,{b64}" '            f'style="width:100%;max-width:400px;height:auto;display:block;" />',
+            f'<img src="data:image/svg+xml;base64,{b64}" '
+            f'style="width:100%;max-width:400px;height:auto;display:block;" />',
             unsafe_allow_html=True,
         )
 
     for step in steps:
         with st.expander(f"{step['icon']} {step['title']}", expanded=False):
-            col_img, col_text = st.columns([1, 1])
-            with col_img:
-                _render_svg(step["svg"]())
-            with col_text:
+            has_svg2 = "svg2" in step
+            if has_svg2:
+                # ⑧専用：テキストを上に、画像2枚を下に横並びで表示
                 st.markdown(step["desc"])
                 st.markdown("**📌 ポイント：**")
                 for pt in step["points"]:
                     st.markdown(f"- {pt}")
+                col_img1, col_img2 = st.columns(2)
+                with col_img1:
+                    _render_svg(step["svg"]())
+                with col_img2:
+                    _render_svg(step["svg2"]())
+            else:
+                col_img, col_text = st.columns([1, 1])
+                with col_img:
+                    _render_svg(step["svg"]())
+                with col_text:
+                    st.markdown(step["desc"])
+                    st.markdown("**📌 ポイント：**")
+                    for pt in step["points"]:
+                        st.markdown(f"- {pt}")
 
     # ── 乾燥竹の判定基準 ──
     st.divider()
