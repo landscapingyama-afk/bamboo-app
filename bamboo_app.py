@@ -1417,71 +1417,77 @@ def _svg_step4_node() -> str:
 
 
 def _svg_step5_roller() -> str:
-    """⑤ パイプを通した竹をフレームに並べる（垂木ブロック：片側4個×両側＝計8個）"""
-    # ローラー4本、各ローラーの両端に垂木ブロック1個ずつ → 片側4個・両側8個
-    return '''<svg viewBox="0 0 340 190" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
+    """⑤ パイプを通した竹をフレームに並べる（垂木ブロックは竹から半分ずらして配置）"""
+    # ローラー4本。垂木ブロックは竹の端から半分ずらして（竹外側・パイプ固定位置に）配置
+    return '''<svg viewBox="0 0 340 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
   <text x="170" y="14" text-anchor="middle" font-size="11" fill="#546e7a" font-weight="bold" font-family="sans-serif">竹ローラーをフレームに組み付け</text>
-  <text x="170" y="26" text-anchor="middle" font-size="8" fill="#1565c0" font-family="sans-serif">垂木ブロック：片側4個（両側計8個）／パイプを両側から挟んで固定</text>
+  <text x="170" y="26" text-anchor="middle" font-size="8" fill="#1565c0" font-family="sans-serif">垂木ブロックはパイプを固定（竹の位置から半分ずらして設置）</text>
 
   <!-- フレーム左（側板） -->
   <rect x="12" y="36" width="13" height="108" rx="3" fill="#8B6914" stroke="#5a4008" stroke-width="1.5"/>
   <!-- フレーム右（側板） -->
   <rect x="315" y="36" width="13" height="108" rx="3" fill="#8B6914" stroke="#5a4008" stroke-width="1.5"/>
 
-  <!-- ===== ローラー1（上） ===== -->
-  <!-- 垂木ブロック左（パイプ外側固定） -->
-  <rect x="25" y="42" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
-  <!-- 竹ローラー -->
+  <!-- 竹ローラー4本（左端x=37, 右端x=263, 各ローラー間隔14px） -->
+  <!-- ローラー1 y中心=49 -->
   <rect x="37" y="42" width="226" height="14" rx="7" fill="#4caf50" stroke="#2e7d32" stroke-width="1.5"/>
   <ellipse cx="37"  cy="49" rx="4" ry="7" fill="#66bb6a" stroke="#2e7d32" stroke-width="1"/>
   <ellipse cx="263" cy="49" rx="4" ry="7" fill="#66bb6a" stroke="#2e7d32" stroke-width="1"/>
-  <!-- パイプ端面 -->
   <ellipse cx="37"  cy="49" rx="2.5" ry="4" fill="#b0bec5" stroke="#607d8b" stroke-width="0.8"/>
   <ellipse cx="263" cy="49" rx="2.5" ry="4" fill="#b0bec5" stroke="#607d8b" stroke-width="0.8"/>
-  <!-- 垂木ブロック右 -->
-  <rect x="263" y="42" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
-  <!-- パイプ（フレーム外に飛び出す・左右） -->
-  <line x1="12" y1="49" x2="25" y2="49" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
-  <line x1="275" y1="49" x2="315" y2="49" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
-
-  <!-- ===== ローラー2 ===== -->
-  <rect x="25" y="58" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
+  <!-- ローラー2 y中心=65 -->
   <rect x="37" y="58" width="226" height="14" rx="7" fill="#4caf50" stroke="#2e7d32" stroke-width="1.5"/>
   <ellipse cx="37"  cy="65" rx="4" ry="7" fill="#66bb6a" stroke="#2e7d32" stroke-width="1"/>
   <ellipse cx="263" cy="65" rx="4" ry="7" fill="#66bb6a" stroke="#2e7d32" stroke-width="1"/>
   <ellipse cx="37"  cy="65" rx="2.5" ry="4" fill="#b0bec5" stroke="#607d8b" stroke-width="0.8"/>
   <ellipse cx="263" cy="65" rx="2.5" ry="4" fill="#b0bec5" stroke="#607d8b" stroke-width="0.8"/>
-  <rect x="263" y="58" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
-  <line x1="12" y1="65" x2="25" y2="65" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
-  <line x1="275" y1="65" x2="315" y2="65" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
-
-  <!-- ===== ローラー3 ===== -->
-  <rect x="25" y="74" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
+  <!-- ローラー3 y中心=81 -->
   <rect x="37" y="74" width="226" height="14" rx="7" fill="#4caf50" stroke="#2e7d32" stroke-width="1.5"/>
   <ellipse cx="37"  cy="81" rx="4" ry="7" fill="#66bb6a" stroke="#2e7d32" stroke-width="1"/>
   <ellipse cx="263" cy="81" rx="4" ry="7" fill="#66bb6a" stroke="#2e7d32" stroke-width="1"/>
   <ellipse cx="37"  cy="81" rx="2.5" ry="4" fill="#b0bec5" stroke="#607d8b" stroke-width="0.8"/>
   <ellipse cx="263" cy="81" rx="2.5" ry="4" fill="#b0bec5" stroke="#607d8b" stroke-width="0.8"/>
-  <rect x="263" y="74" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
-  <line x1="12" y1="81" x2="25" y2="81" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
-  <line x1="275" y1="81" x2="315" y2="81" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
-
-  <!-- ===== ローラー4 ===== -->
-  <rect x="25" y="90" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
+  <!-- ローラー4 y中心=97 -->
   <rect x="37" y="90" width="226" height="14" rx="7" fill="#4caf50" stroke="#2e7d32" stroke-width="1.5"/>
   <ellipse cx="37"  cy="97" rx="4" ry="7" fill="#66bb6a" stroke="#2e7d32" stroke-width="1"/>
   <ellipse cx="263" cy="97" rx="4" ry="7" fill="#66bb6a" stroke="#2e7d32" stroke-width="1"/>
   <ellipse cx="37"  cy="97" rx="2.5" ry="4" fill="#b0bec5" stroke="#607d8b" stroke-width="0.8"/>
   <ellipse cx="263" cy="97" rx="2.5" ry="4" fill="#b0bec5" stroke="#607d8b" stroke-width="0.8"/>
-  <rect x="263" y="90" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
-  <line x1="12" y1="97" x2="25" y2="97" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
-  <line x1="275" y1="97" x2="315" y2="97" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 垂木ブロック（左側）：竹の端から半分ずらし（外寄り）に配置 -->
+  <!-- 竹の左端x=37。垂木ブロックは竹の端より7px左（外側）から始まる -->
+  <!-- 各ローラーに対応する垂木ブロック（高さ=ローラー高さ14px、幅12px） -->
+  <rect x="21" y="42" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
+  <rect x="21" y="58" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
+  <rect x="21" y="74" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
+  <rect x="21" y="90" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
+
+  <!-- 垂木ブロック（右側）：竹の右端x=263から外寄りに -->
+  <rect x="267" y="42" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
+  <rect x="267" y="58" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
+  <rect x="267" y="74" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
+  <rect x="267" y="90" width="12" height="14" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1.2"/>
+
+  <!-- パイプ（竹外に飛び出してフレームまで延びる） -->
+  <line x1="12" y1="49" x2="21" y2="49" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="12" y1="65" x2="21" y2="65" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="12" y1="81" x2="21" y2="81" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="12" y1="97" x2="21" y2="97" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="279" y1="49" x2="315" y2="49" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="279" y1="65" x2="315" y2="65" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="279" y1="81" x2="315" y2="81" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="279" y1="97" x2="315" y2="97" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 説明矢印：垂木ブロックが竹から半分ずれている旨 -->
+  <line x1="27" y1="112" x2="27" y2="120" stroke="#e65100" stroke-width="1.2"/>
+  <text x="27" y="132" text-anchor="middle" font-size="7.5" fill="#e65100" font-weight="bold" font-family="sans-serif">垂木ブロック</text>
+  <text x="27" y="142" text-anchor="middle" font-size="7" fill="#e65100" font-family="sans-serif">（竹の外側・パイプ固定）</text>
 
   <!-- 凡例 -->
-  <rect x="60" y="116" width="12" height="8" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1"/>
-  <text x="76" y="124" font-size="8" fill="#5a4008" font-family="sans-serif">垂木ブロック（片側4個・両側計8個）</text>
-  <line x1="60" y1="136" x2="72" y2="136" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
-  <text x="76" y="140" font-size="8" fill="#546e7a" font-family="sans-serif">パイプ（竹の外に飛び出してフレームに固定）</text>
+  <rect x="100" y="118" width="10" height="8" rx="2" fill="#a07832" stroke="#5a4008" stroke-width="1"/>
+  <text x="114" y="126" font-size="8" fill="#5a4008" font-family="sans-serif">垂木ブロック（パイプ固定）</text>
+  <line x1="100" y1="138" x2="110" y2="138" stroke="#90a4ae" stroke-width="3" stroke-linecap="round"/>
+  <text x="114" y="142" font-size="8" fill="#546e7a" font-family="sans-serif">パイプ（竹の外に飛び出してフレームに固定）</text>
 
   <text x="170" y="162" text-anchor="middle" font-size="9" fill="#2e7d32" font-weight="bold" font-family="sans-serif">パイプ入り竹をフレームに並べ、垂木ブロックでパイプを両側から固定</text>
   <text x="170" y="175" text-anchor="middle" font-size="8" fill="#c62828" font-family="sans-serif">竹はパイプを軸に自由に回転（ローラー動作）する</text>
@@ -1625,27 +1631,55 @@ def _svg_step7_slope() -> str:
 
 
 def _svg_step8_complete() -> str:
-    """⑧ 完成図"""
-    return '''<svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:320px;height:auto;">
+    """⑧ 完成図（側面図スタイル：支柱＋斜面フレーム＋ローラー竹＋手すり＋階段）"""
+    return '''<svg viewBox="0 0 340 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:340px;height:auto;">
+  <text x="170" y="14" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">全体を組み上げて完成</text>
+
   <!-- 地面 -->
-  <rect x="0" y="155" width="320" height="25" fill="#e8d5b0" stroke="none"/>
-  <line x1="0" y1="155" x2="320" y2="155" stroke="#795548" stroke-width="1.5"/>
-  <!-- 支柱左高 -->
-  <rect x="28" y="42" width="13" height="113" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.2"/>
-  <!-- 支柱右低 -->
-  <rect x="228" y="118" width="13" height="37" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.2"/>
-  <!-- 斜面フレーム -->
-  <polygon points="28,42 41,42 241,118 228,118" fill="#a1887f" stroke="#5d4037" stroke-width="1.2"/>
-  <!-- ローラー竹（6本） -->
-  <line x1="46" y1="52" x2="228" y2="112" stroke="#4caf50" stroke-width="9" stroke-linecap="round" opacity="0.9"/>
-  <line x1="66" y1="57" x2="228" y2="112" stroke="#388e3c" stroke-width="2" opacity="0.3"/>
-  <!-- 手すり竹（左側） -->
-  <line x1="28" y1="28" x2="228" y2="105" stroke="#2e7d32" stroke-width="12" stroke-linecap="round" opacity="0.85"/>
-  <!-- 手すり竹（右側・奥） -->
-  <line x1="41" y1="30" x2="241" y2="107" stroke="#1b5e20" stroke-width="10" stroke-linecap="round" opacity="0.5"/>
+  <rect x="0" y="190" width="340" height="30" fill="#d7ccc8"/>
+  <line x1="0" y1="190" x2="340" y2="190" stroke="#795548" stroke-width="2"/>
+
+  <!-- 支柱（垂直・左高） -->
+  <rect x="52" y="48" width="14" height="142" rx="3" fill="#8B6914" stroke="#5a4008" stroke-width="1.5"/>
+
+  <!-- 斜面フレーム（支柱上端→右下へ） -->
+  <polygon points="52,48 66,48 300,190 286,190" fill="#8B6914" stroke="#5a4008" stroke-width="1.2"/>
+
+  <!-- ローラー竹（斜面上） -->
+  <line x1="62" y1="54" x2="292" y2="188" stroke="#4caf50" stroke-width="10" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- 手すり竹（左） -->
+  <line x1="48" y1="32" x2="285" y2="175" stroke="#2e7d32" stroke-width="9" stroke-linecap="round" opacity="0.88"/>
+
+  <!-- 階段（縦桟2本・約30度傾き） -->
+  <!-- 左縦桟：上端(52,48)→下端(20,190) -->
+  <line x1="52" y1="48" x2="20" y2="190" stroke="#8B6914" stroke-width="7" stroke-linecap="round"/>
+  <!-- 右縦桟：上端(66,48)→下端(34,190) -->
+  <line x1="66" y1="48" x2="34" y2="190" stroke="#5a4008" stroke-width="5" stroke-linecap="round"/>
+  <!-- 踏み板3段 -->
+  <line x1="24" y1="145" x2="55" y2="145" stroke="#a07832" stroke-width="7" stroke-linecap="round"/>
+  <line x1="31" y1="107" x2="62" y2="107" stroke="#a07832" stroke-width="7" stroke-linecap="round"/>
+  <line x1="38" y1="69"  x2="66" y2="69"  stroke="#a07832" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- 支点マーカー -->
+  <circle cx="59" cy="190" r="7" fill="#e53935" opacity="0.35" stroke="#b71c1c" stroke-width="1.2"/>
+  <circle cx="59" cy="190" r="3" fill="#b71c1c" opacity="0.75"/>
+  <circle cx="293" cy="190" r="7" fill="#e53935" opacity="0.35" stroke="#b71c1c" stroke-width="1.2"/>
+  <circle cx="293" cy="190" r="3" fill="#b71c1c" opacity="0.75"/>
+
+  <!-- 寸法 -->
+  <line x1="59" y1="202" x2="293" y2="202" stroke="#546e7a" stroke-width="1.2"/>
+  <polygon points="59,200 59,204 53,202" fill="#546e7a"/>
+  <polygon points="293,200 293,204 299,202" fill="#546e7a"/>
+  <text x="176" y="213" text-anchor="middle" font-size="8" fill="#546e7a" font-family="sans-serif">2.24m</text>
+  <line x1="40" y1="48" x2="40" y2="190" stroke="#546e7a" stroke-width="1.2"/>
+  <line x1="36" y1="48"  x2="44" y2="48"  stroke="#546e7a" stroke-width="1.2"/>
+  <line x1="36" y1="190" x2="44" y2="190" stroke="#546e7a" stroke-width="1.2"/>
+  <text x="30" y="123" text-anchor="middle" font-size="8" fill="#546e7a" font-family="sans-serif" transform="rotate(-90,30,123)">1.20m</text>
+
   <!-- 完成ラベル -->
-  <text x="160" y="170" text-anchor="middle" font-size="13" fill="#2e7d32" font-weight="bold" font-family="sans-serif">竹コースター滑り台　完成！</text>
-  <text x="160" y="18" text-anchor="middle" font-size="11" fill="#546e7a" font-family="sans-serif">全体を組み上げて完成</text>
+  <rect x="130" y="55" width="150" height="22" rx="4" fill="#e8f5e9" stroke="#388e3c" stroke-width="1.2"/>
+  <text x="205" y="70" text-anchor="middle" font-size="10" fill="#1b5e20" font-weight="bold" font-family="sans-serif">竹コースター滑り台　完成！</text>
 </svg>'''
 
 
@@ -1668,99 +1702,98 @@ def _svg_step3_clamp() -> str:
   <text x="170" y="14" text-anchor="middle" font-size="11" fill="#546e7a" font-weight="bold" font-family="sans-serif">垂木ブロックでパイプを固定・竹はパイプ軸を中心に回転</text>
 
   <!-- ============================================================ -->
-  <!-- 左：断面図（フレーム正面から見た図）                        -->
-  <!-- 竹外径=44px(r=22)、パイプ外径=14px(r=7)、中心y=96           -->
-  <!-- 垂木ブロック：パイプの両脇に密着、高さ＝竹の外径（44px）   -->
+  <!-- 左：断面図（フレーム正面）竹の中心1/3を見せてパイプを挟む  -->
+  <!-- 竹外径r=22, パイプr=7, 中心cy=100                           -->
   <!-- ============================================================ -->
   <text x="82" y="30" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">断面図（フレーム正面）</text>
 
   <!-- 木材フレーム底板 -->
-  <rect x="18" y="118" width="128" height="14" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+  <rect x="18" y="122" width="128" height="14" rx="3" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
 
-  <!-- 垂木ブロック左（パイプ左脇・高さ＝竹外径44px・y:74〜118） -->
-  <!-- パイプ左端に密着。右端はパイプ左面(cx-7=75)に接する -->
-  <rect x="36" y="74" width="17" height="44" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
-  <!-- 垂木ブロック右（パイプ右脇・y:74〜118） -->
-  <!-- パイプ右面(cx+7=89)から始まる -->
-  <rect x="111" y="74" width="17" height="44" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
+  <!-- 垂木ブロック左（パイプ左脇・高さ=竹外径44px）フレーム底板上に載る -->
+  <rect x="36" y="78" width="17" height="44" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
+  <!-- 垂木ブロック右 -->
+  <rect x="111" y="78" width="17" height="44" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
+
+  <!-- 竹断面（中心1/3のみ表示：上下をクリップして中央帯のみ見える） -->
+  <!-- 竹全体は r=22, 中心1/3 = 高さ44の中央1/3 ≒ 上下各14.6pxをマスク -->
+  <!-- 竹外輪（全体） -->
+  <ellipse cx="82" cy="100" rx="22" ry="22" fill="#4caf50" stroke="#2e7d32" stroke-width="2" opacity="0.88"/>
+  <ellipse cx="82" cy="100" rx="13" ry="13" fill="#81c784" stroke="#388e3c" stroke-width="1" opacity="0.7"/>
+  <!-- 上マスク（垂木ブロックで隠れる部分を覆い隠す） -->
+  <rect x="53" y="78" width="58" height="15" fill="#bcaaa4"/>
+  <!-- 下マスク -->
+  <rect x="53" y="107" width="58" height="15" fill="#bcaaa4"/>
 
   <!-- パイプ断面（垂木ブロックの間を貫通・固定） -->
-  <ellipse cx="82" cy="96" rx="7" ry="7" fill="#90a4ae" stroke="#455a64" stroke-width="2"/>
-  <ellipse cx="82" cy="96" rx="3.5" ry="3.5" fill="#cfd8dc" stroke="#607d8b" stroke-width="1"/>
-  <text x="92" y="88" font-size="7.5" fill="#455a64" font-family="sans-serif">パイプ固定</text>
-
-  <!-- 竹断面（パイプを囲んで回転・外径r=22） -->
-  <!-- 竹はブロックの外側に配置されるのではなく、ブロックとブロックの間に収まる -->
-  <ellipse cx="82" cy="96" rx="22" ry="22" fill="#4caf50" stroke="#2e7d32" stroke-width="2" opacity="0.88"/>
-  <ellipse cx="82" cy="96" rx="13" ry="13" fill="#81c784" stroke="#388e3c" stroke-width="1" opacity="0.7"/>
-  <!-- パイプを竹の上に再描画 -->
-  <ellipse cx="82" cy="96" rx="7" ry="7" fill="#90a4ae" stroke="#455a64" stroke-width="2"/>
-  <ellipse cx="82" cy="96" rx="3.5" ry="3.5" fill="#cfd8dc" stroke="#607d8b" stroke-width="1"/>
+  <ellipse cx="82" cy="100" rx="7" ry="7" fill="#90a4ae" stroke="#455a64" stroke-width="2"/>
+  <ellipse cx="82" cy="100" rx="3.5" ry="3.5" fill="#cfd8dc" stroke="#607d8b" stroke-width="1"/>
+  <text x="92" y="91" font-size="7.5" fill="#455a64" font-family="sans-serif">パイプ固定</text>
 
   <!-- 回転矢印 -->
-  <path d="M 100 80 A 22 22 0 0 1 104 96" fill="none" stroke="#e53935" stroke-width="2"/>
-  <polygon points="103,96 110,89 98,86" fill="#e53935"/>
-  <text x="110" y="78" font-size="8" fill="#c62828" font-family="sans-serif">竹が回転</text>
+  <path d="M 100 84 A 22 22 0 0 1 104 100" fill="none" stroke="#e53935" stroke-width="2"/>
+  <polygon points="103,100 110,93 98,90" fill="#e53935"/>
+  <text x="110" y="82" font-size="8" fill="#c62828" font-family="sans-serif">竹が回転</text>
 
   <!-- 高さ寸法線（垂木高さ＝竹外径） -->
-  <line x1="22" y1="74" x2="22" y2="118" stroke="#e53935" stroke-width="1.2"/>
-  <line x1="18" y1="74" x2="26" y2="74" stroke="#e53935" stroke-width="1.2"/>
-  <line x1="18" y1="118" x2="26" y2="118" stroke="#e53935" stroke-width="1.2"/>
-  <text x="1" y="93" font-size="7" fill="#c62828" font-family="sans-serif">高さ</text>
-  <text x="1" y="103" font-size="7" fill="#c62828" font-family="sans-serif">＝竹径</text>
+  <line x1="22" y1="78" x2="22" y2="122" stroke="#e53935" stroke-width="1.2"/>
+  <line x1="18" y1="78" x2="26" y2="78" stroke="#e53935" stroke-width="1.2"/>
+  <line x1="18" y1="122" x2="26" y2="122" stroke="#e53935" stroke-width="1.2"/>
+  <text x="1" y="97" font-size="7" fill="#c62828" font-family="sans-serif">高さ</text>
+  <text x="1" y="107" font-size="7" fill="#c62828" font-family="sans-serif">＝竹径</text>
 
   <!-- ビス -->
-  <line x1="45" y1="118" x2="45" y2="127" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
-  <polygon points="41,127 49,127 45,134" fill="#757575"/>
-  <line x1="119" y1="118" x2="119" y2="127" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
-  <polygon points="115,127 123,127 119,134" fill="#757575"/>
+  <line x1="45" y1="122" x2="45" y2="131" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="41,131 49,131 45,138" fill="#757575"/>
+  <line x1="119" y1="122" x2="119" y2="131" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="115,131 123,131 119,138" fill="#757575"/>
 
-  <text x="30" y="70" font-size="8" fill="#5d4037" font-family="sans-serif">垂木(左)</text>
-  <text x="109" y="70" font-size="8" fill="#5d4037" font-family="sans-serif">垂木(右)</text>
-  <text x="58" y="148" font-size="8" fill="#2e7d32" font-family="sans-serif">竹（フリー回転）</text>
+  <text x="30" y="74" font-size="8" fill="#5d4037" font-family="sans-serif">垂木(左)</text>
+  <text x="109" y="74" font-size="8" fill="#5d4037" font-family="sans-serif">垂木(右)</text>
+  <text x="55" y="154" font-size="8" fill="#2e7d32" font-family="sans-serif">竹（フリー回転）</text>
 
   <!-- ============================================================ -->
-  <!-- 右：側面図（パイプが竹より長く両端を垂木ブロックで固定）   -->
+  <!-- 右：側面図（垂木ブロックをフレーム板の上に載せ・縦を半分）  -->
+  <!-- フレーム板 y=122〜136、垂木ブロック高さ=18px（半分）         -->
   <!-- ============================================================ -->
   <text x="258" y="30" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="bold" font-family="sans-serif">側面図（横から）</text>
 
-  <!-- 木材フレーム左右 -->
-  <rect x="170" y="108" width="14" height="24" rx="2" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
-  <rect x="326" y="108" width="14" height="24" rx="2" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
+  <!-- 木材フレーム（底板・左右） -->
+  <rect x="170" y="118" width="170" height="12" rx="2" fill="#8d6e63" stroke="#5d4037" stroke-width="1.5"/>
 
-  <!-- パイプ（竹より長い・フレーム内側を端から端まで） -->
-  <rect x="170" y="91" width="170" height="10" rx="3" fill="#90a4ae" stroke="#455a64" stroke-width="1.5"/>
-
-  <!-- 垂木ブロック左（パイプを固定・高さ＝竹径36px） -->
-  <rect x="173" y="78" width="20" height="54" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
+  <!-- 垂木ブロック左（フレーム板の上に載る・高さ18px=元の半分） -->
+  <rect x="173" y="100" width="20" height="18" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
   <!-- 垂木ブロック右 -->
-  <rect x="317" y="78" width="20" height="54" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
+  <rect x="317" y="100" width="20" height="18" rx="3" fill="#bcaaa4" stroke="#5d4037" stroke-width="2"/>
+
+  <!-- パイプ（竹より長い・垂木ブロックを貫通） -->
+  <rect x="170" y="104" width="170" height="8" rx="3" fill="#90a4ae" stroke="#455a64" stroke-width="1.5"/>
 
   <!-- 竹（ブロックとブロックの間・パイプより短い） -->
-  <rect x="196" y="78" width="118" height="36" rx="10" fill="#4caf50" stroke="#2e7d32" stroke-width="2"/>
-  <rect x="202" y="84" width="106" height="22" rx="6" fill="#81c784" stroke="#388e3c" stroke-width="1" opacity="0.55"/>
-  <text x="255" y="100" text-anchor="middle" font-size="8" fill="#1b5e20" font-weight="bold" font-family="sans-serif">竹（回転）</text>
+  <rect x="196" y="91" width="118" height="27" rx="8" fill="#4caf50" stroke="#2e7d32" stroke-width="2"/>
+  <rect x="202" y="97" width="106" height="15" rx="5" fill="#81c784" stroke="#388e3c" stroke-width="1" opacity="0.55"/>
+  <text x="255" y="107" text-anchor="middle" font-size="8" fill="#1b5e20" font-weight="bold" font-family="sans-serif">竹（回転）</text>
 
   <!-- パイプ飛び出し ← 矢印 -->
-  <line x1="170" y1="86" x2="193" y2="86" stroke="#455a64" stroke-width="1" stroke-dasharray="3,2"/>
-  <polygon points="170,84 170,88 164,86" fill="#455a64"/>
-  <text x="160" y="75" font-size="7" fill="#455a64" font-family="sans-serif">飛出し</text>
+  <line x1="170" y1="97" x2="193" y2="97" stroke="#455a64" stroke-width="1" stroke-dasharray="3,2"/>
+  <polygon points="170,95 170,99 164,97" fill="#455a64"/>
+  <text x="148" y="87" font-size="7" fill="#455a64" font-family="sans-serif">飛出し</text>
   <!-- パイプ飛び出し → 矢印 -->
-  <line x1="317" y1="86" x2="340" y2="86" stroke="#455a64" stroke-width="1" stroke-dasharray="3,2"/>
-  <polygon points="340,84 340,88 346,86" fill="#455a64"/>
-  <text x="318" y="75" font-size="7" fill="#455a64" font-family="sans-serif">飛出し</text>
+  <line x1="317" y1="97" x2="340" y2="97" stroke="#455a64" stroke-width="1" stroke-dasharray="3,2"/>
+  <polygon points="340,95 340,99 346,97" fill="#455a64"/>
+  <text x="320" y="87" font-size="7" fill="#455a64" font-family="sans-serif">飛出し</text>
 
   <!-- ビス -->
-  <line x1="183" y1="124" x2="183" y2="132" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
-  <polygon points="179,132 187,132 183,139" fill="#757575"/>
-  <line x1="327" y1="124" x2="327" y2="132" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
-  <polygon points="323,132 331,132 327,139" fill="#757575"/>
+  <line x1="183" y1="118" x2="183" y2="126" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="179,126 187,126 183,133" fill="#757575"/>
+  <line x1="327" y1="118" x2="327" y2="126" stroke="#9e9e9e" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="323,126 331,126 327,133" fill="#757575"/>
 
-  <!-- 竹長さ寸法（ブロック内側間） -->
-  <line x1="196" y1="70" x2="314" y2="70" stroke="#2e7d32" stroke-width="1.2"/>
-  <polygon points="196,68 196,72 190,70" fill="#2e7d32"/>
-  <polygon points="314,68 314,72 320,70" fill="#2e7d32"/>
-  <text x="255" y="67" text-anchor="middle" font-size="7" fill="#1b5e20" font-family="sans-serif">竹の長さ（パイプより短い）</text>
+  <!-- 竹長さ寸法 -->
+  <line x1="196" y1="83" x2="314" y2="83" stroke="#2e7d32" stroke-width="1.2"/>
+  <polygon points="196,81 196,85 190,83" fill="#2e7d32"/>
+  <polygon points="314,81 314,85 320,83" fill="#2e7d32"/>
+  <text x="255" y="80" text-anchor="middle" font-size="7" fill="#1b5e20" font-family="sans-serif">竹の長さ（パイプより短い）</text>
 
   <!-- ============================================================ -->
   <!-- 下部：説明ボックス                                           -->
@@ -3013,13 +3046,13 @@ def render_slide_construction_guide(diameter_cm: float):
                 "**ポイントはパイプを固定し、竹はパイプの周りを自由に回転できる状態にすること**です。"
                 "竹はパイプに対してフリーに回転（ローラー）するため、"
                 "ブロックが固定するのはパイプであり、竹ではありません。"
-                "ブロックの高さはパイプ径と同程度が目安で、フレームにしっかり固定されることで"
+                "ブロックの高さは竹の直径と同程度が目安で、フレームにしっかり固定されることで"
                 "パイプがずれず安定したローラー面になります。"
             ),
             "points": [
                 "垂木ブロックはパイプの左右（竹の外側）に密着させてフレームにビス固定する。",
                 "竹はパイプを軸に自由に回転できる状態を保つ（竹を直接固定しない）。",
-                "ブロックの高さの目安はパイプ径（竹の直径）と同程度。",
+                "ブロックの高さの目安は竹の直径と同程度。",
                 "ビスは下穴を空けてから打つと木材が割れにくい。",
                 "ブロック間隔（パイプ中心間距離）はパイプ径の1.0〜1.2倍程度が適切。",
                 "ビスはコーススレッド65mm以上を使用し、各ブロック2本以上打つ。",
@@ -3092,6 +3125,9 @@ def render_slide_construction_guide(diameter_cm: float):
                 "【縦桟】上端はローラー面（斜面）の傾斜角と同じ角度で斜めにカットする（ノコギリ使用、保護具着用）。",
                 "【縦桟】斜めカットの角度は滑り台の傾斜角（arctan(高さ÷水平長さ)）と同じ。",
                 "【足ぶれ防止板】最下部（地面付近）の縦桟の間に横方向の板を渡す。高さが80cm以上の場合は中間にも1枚追加する。",
+                "⚠️【重要・ケガ防止】竹の繊維はノコギリやナイフで切断した断面・切り口にも繊維のトゲ（ささくれ）が残る。竹は繊維が長く非常に強靭なため、刺さると深く入り抜けにくく、放置すると化膿・感染症の原因になる重大事故につながる。",
+                "⚠️【重要・ケガ防止】手すり竹の全ての切り口・断面はサンドペーパー（#120→#240）で十分に磨き、素手で触れて引っかかりがなくなるまで仕上げること。特に子どもの手が触れる部分（端部・節まわり）は入念に処理する。",
+                "⚠️【重要・ケガ防止】使用前・定期点検時に手すり竹の表面全体を素手で撫でて確認し、ささくれ・割れ・剥離が生じていれば即座に使用を禁止して研磨または交換する。",
             ],
         },
         {
@@ -3099,34 +3135,24 @@ def render_slide_construction_guide(diameter_cm: float):
             "icon": "📐",
             "svg": _svg_step7_slope,
             "desc": (
-                "支柱の地面固定は**転倒防止の最重要工程**です。"
-                "竹遊具は一時設置・撤去を前提とするため、以下の2案から設置場所の状況に応じて選択してください。\n\n"
-                "---\n\n"
-                "**【案①】単管パイプ打ち込み式（最推奨・固定力が高い）**\n\n"
-                "支柱固定用の単管パイプ（φ48.6mm）をパイプハンマーで地面に**50cm以上**打ち込み、"
+                "支柱の固定は転倒防止のための大切な工程です。\n\n"
+                "**【推奨】単管パイプ打ち込み式**\n\n"
+                "単管パイプ（φ48.6mm）をパイプハンマーで地面に**50cm以上**打ち込み、"
                 "直交クランプで木製支柱と連結します。"
-                "ホームセンターで全材料が揃い、撤去時はパイプを引き抜くだけで復元できます。"
-                "固定力は最も高く、一時設置として最も安全な方法です。\n\n"
-                "---\n\n"
-                "**【案②】ウォーターウェイト式（平坦・硬い地面限定）**\n\n"
-                "市販のウォーターウェイト（イベント用テント固定用）や大型ポリタンク（20L以上）に水を満タンに入れ、"
-                "支柱ベースにロープ・ベルトでしっかり固定します。"
-                "1基あたり**最低20kg以上**の重量を確保してください。"
-                "ただし案①より固定力が劣るため、**平坦で硬い地面・風が弱い日・大人が必ず付き添う条件**でのみ使用してください。\n\n"
-                "---\n\n"
-                "支柱と斜面フレームの間には必ず**筋交い（ブレース）**を入れて横揺れを防いでください。"
-                "傾斜角度は**35°以下**に設定します。"
+                "材料はホームセンターで揃い、撤去時はパイプを引き抜くだけです。\n\n"
+                "固定後は支柱を大人が全力で揺らして動かないことを確認してください。"
+                "傾斜角度は**35°以下**を守りましょう。\n\n"
+                "**運用ルール（固定方法に関わらず必ず守ること）**\n\n"
+                "設置・使用中は**大人が必ず傍に付き添います。**"
+                "強風・雨天時は使用を中止し、毎回使用前に固定状態を目視で確認してください。"
             ),
             "points": [
-                "【案①】単管パイプはφ48.6mm・長さ1〜1.5mを使用し、50cm以上打ち込む。地面が軟らかい場合は60cm以上。",
-                "【案①】直交クランプ（ホームセンターで入手可）で支柱と単管を2箇所以上連結する。",
-                "【案②】ウォーターウェイトは1基あたり20kg以上。支柱1本に対して両側に配置するとより安全。",
-                "【案②】ポリタンクを使う場合は転倒しないよう支柱にしっかりロープで縛り付ける。",
-                "【案②共通注意】傾斜地・軟弱地盤・強風時は案②を使用しない。必ず案①にする。",
-                "【両案共通】筋交い（ブレース）は必ず設ける。斜め45°程度が効果的。",
-                "【両案共通】設置後に支柱を大人が全力で揺らし、動かないことを必ず確認してから使用を開始する。",
-                "【両案共通】使用中は必ず大人が付き添い、強風・雨天時は使用を中止する。",
-                "【両案共通】使用のたびに固定状態を目視・手動で確認する（緩み・傾きがないか）。",
+                "単管パイプはφ48.6mm・長さ1m以上を使用し、地面に50cm以上打ち込む。",
+                "直交クランプで支柱と単管を2箇所以上連結し、がたつきがないことを確認する。",
+                "設置後に支柱を大人が全力で押して動かないことを必ず確認してから使用を開始する。",
+                "使用中は大人が必ず傍に付き添う。子どもだけでの使用は禁止。",
+                "強風・雨天時は使用を中止する。",
+                "毎回使用前に支柱の固定状態・緩み・傾きを目視と手で確認する。",
             ],
         },
         {
@@ -3184,16 +3210,16 @@ def render_slide_construction_guide(diameter_cm: float):
         with st.expander(f"{step['icon']} {step['title']}", expanded=False):
             has_svg2 = "svg2" in step
             if has_svg2:
-                # ⑧専用：テキストを上に、画像2枚を下に横並びで表示
-                st.markdown(step["desc"])
-                st.markdown("**📌 ポイント：**")
-                for pt in step["points"]:
-                    st.markdown(f"- {pt}")
-                col_img1, col_img2 = st.columns(2)
-                with col_img1:
-                    _render_svg(step["svg"]())
-                with col_img2:
-                    _render_svg(step["svg2"]())
+                # ⑧専用：左に説明文、右に画像2枚を縦に並べて表示
+                col_text, col_imgs = st.columns([1, 1])
+                with col_text:
+                    st.markdown(step["desc"])
+                    st.markdown("**📌 ポイント：**")
+                    for pt in step["points"]:
+                        st.markdown(f"- {pt}")
+                with col_imgs:
+                    _render_svg(step["svg"]())   # 上：階段図
+                    _render_svg(step["svg2"]())  # 下：完成図
             else:
                 col_img, col_text = st.columns([1, 1])
                 with col_img:
