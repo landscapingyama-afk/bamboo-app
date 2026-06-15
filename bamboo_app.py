@@ -350,7 +350,9 @@ def check_deflection(
 
 
 def _hollow_I_legacy(diameter_m: float) -> float:
-    """後方互換用。新規コードは Dimensions.section_I を使うこと。"""
+    """後方互換用。新規コードは Dimensions.section_I を使うこと。
+    # TODO: 次期バージョンで削除予定。呼び出し元は check_bending / check_deflection 内のみ。
+    """
     di = diameter_m * (1.0 - 2 * BAMBOO_WALL_RATIO)
     return math.pi * (diameter_m**4 - di**4) / 64
 
@@ -456,14 +458,29 @@ def load_marker(cx: float, cy: float, r: float = 10, label: str = "荷重集中�
 
 
 # ══════════════════════════════════════════════════════════════════
+# プラグイン自動登録デコレータ
+# ══════════════════════════════════════════════════════════════════
+# 使い方：ToolPlugin サブクラスに @register_plugin を付けるだけで
+#         REGISTRY へ自動登録される。main() や REGISTRY への手動追記は不要。
+REGISTRY: dict[str, "ToolPlugin"] = {}
+
+def register_plugin(cls: type) -> type:
+    """クラス定義時に自動で REGISTRY へ登録するデコレータ。"""
+    instance = cls()
+    REGISTRY[instance.name] = instance
+    return cls
+
+
+# ══════════════════════════════════════════════════════════════════
 # ToolPlugin 基底クラス（遊具を追加するときはこれを継承する）
 # ══════════════════════════════════════════════════════════════════
 class ToolPlugin(ABC):
     """
     新しい遊具を追加するには、このクラスを継承して
-    REGISTRY に登録するだけでOKです。
+    @register_plugin デコレータを付けるだけでOKです（REGISTRY への手動登録不要）。
 
     例:
+        @register_plugin
         class MyTool(ToolPlugin):
             name = "シーソー"
             width_label  = "幅 (m)"
@@ -471,10 +488,9 @@ class ToolPlugin(ABC):
             length_default = 2.0
 
             def validate(self, dims, weight) -> list[str]: ...
-            def safety_check(self, dims, weight) -> tuple[list[CheckMessage], bool]: ...
+            def safety_check(self, dims, weight, **kwargs) -> tuple[list[CheckMessage], bool]: ...
             def draw(self, dims) -> tuple[str, str, list[Material]]: ...
-
-        REGISTRY["シーソー"] = MyTool()
+            def render_guide(self, diameter_cm: float) -> None: ...  # 省略可（何もしない）
     """
 
     # ── クラス変数（サブクラスで上書き）──────────────────────────
@@ -501,6 +517,20 @@ class ToolPlugin(ABC):
         self, dims: Dimensions
     ) -> Tuple[str, str, List[Material]]:
         """図面生成。(svg_side, svg_top, materials) を返す"""
+
+    def render_guide(self, diameter_cm: float) -> None:
+        """製作手順ガイドを描画する。
+        ガイドが不要な遊具はオーバーライド不要（何もしない）。
+        ガイドがある遊具はこのメソッドをオーバーライドして実装する。
+        """
+        pass
+
+    # ── QA警告定数（全遊具共通・render_safety_messages で折りたたみ表示）──
+    _QA_NOTES: List[str] = [
+        "【QA①】数値の過信禁止：この計算は材料の均質性を前提としています。節の直上への集中荷重は避けてください。",
+        "【QA②】接合部の点検：図面上の赤色マーカー部分はロープ・ビスの緩み一つで崩壊につながります。使用前に必ず確認してください。",
+        "【QA③】環境要因：雨天後の竹は強度が変化します。使用のたびに目視確認を行ってください。",
+    ]
 
     # ── 共通安全チェックヘルパー ──────────────────────────────────
     def _common_checks(
@@ -552,14 +582,7 @@ class ToolPlugin(ABC):
             "荷重がかかる点（支点・座面・接合部）の直下または直上に節が来るよう配置してください",
             "竹の節（ふし）は竹の中で最も強い部分です。重さがかかる場所の直下・直上に節が来るように配置してください。"))
 
-        # ── QAチームからの最終警告（全遊具共通）──
-        msgs.append(CheckMessage("注意",
-            "【QA最終警告①】数値の過信禁止：この計算は材料の均質性を前提としています。節の直上への集中荷重は避けてください。"))
-        msgs.append(CheckMessage("注意",
-            "【QA最終警告②】接合部の点検：図面上の赤色マーカー部分はロープ・ビスの緩み一つで崩壊につながります。使用前に必ず確認してください。"))
-        msgs.append(CheckMessage("注意",
-            "【QA最終警告③】環境要因：雨天後の竹は強度が変化します。使用のたびに目視確認を行ってください。"))
-
+        # QA警告は _QA_NOTES として別途 render_safety_messages で折りたたみ表示する
         return msgs, danger
 
 
@@ -568,6 +591,7 @@ class ToolPlugin(ABC):
 # ══════════════════════════════════════════════════════════════════
 
 # ─────────────────────────── 滑り台 ───────────────────────────────
+@register_plugin
 class SlidePlugin(ToolPlugin):
     name           = "滑り台"
     width_label    = "幅 (m)"
@@ -784,8 +808,12 @@ class SlidePlugin(ToolPlugin):
         ]
         return svg_side, svg_top, materials
 
+    def render_guide(self, diameter_cm: float) -> None:
+        render_slide_construction_guide(diameter_cm)
+
 
 # ─────────────────────────── ブランコ ─────────────────────────────
+@register_plugin
 class SwingPlugin(ToolPlugin):
     name           = "ブランコ"
     width_label    = "幅 (m)"
@@ -977,8 +1005,12 @@ class SwingPlugin(ToolPlugin):
         ]
         return svg_side, svg_top, materials
 
+    def render_guide(self, diameter_cm: float) -> None:
+        render_swing_construction_guide(diameter_cm)
+
 
 # ──────────────────────── ジャングルジム ──────────────────────────
+@register_plugin
 class JungleGymPlugin(ToolPlugin):
     name           = "ジャングルジム"
     width_label    = "底面の直径 (m)"
@@ -1154,18 +1186,8 @@ class JungleGymPlugin(ToolPlugin):
         ]
         return svg_side, svg_top, materials
 
-
-# ══════════════════════════════════════════════════════════════════
-# プラグインレジストリ（ここに追加するだけで遊具が増える）
-# ══════════════════════════════════════════════════════════════════
-REGISTRY: dict[str, ToolPlugin] = {
-    plugin.name: plugin for plugin in [
-        SlidePlugin(),
-        SwingPlugin(),
-        JungleGymPlugin(),
-        # ← ここに新しい ToolPlugin サブクラスのインスタンスを追加するだけ
-    ]
-}
+    def render_guide(self, diameter_cm: float) -> None:
+        render_junglegym_construction_guide(diameter_cm)
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -1304,6 +1326,11 @@ def render_safety_messages(messages: List[CheckMessage], danger: bool):
 ・太く肉厚な竹を選び、節を支点として配置し、定期的な点検を徹底してください。
 </div>"""
     st.markdown(make_accordion("🔴 重要アドバイス（必ずお読みください）", important_body, "#f5eeff", "#c09ae0", False), unsafe_allow_html=True)
+
+    # ── QA共通注意事項（折りたたみ・危険時は自動展開）──────────────
+    with st.expander("📋 QA共通注意事項（必ずお読みください）", expanded=danger):
+        for note in ToolPlugin._QA_NOTES:
+            st.info(note)
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -1720,17 +1747,6 @@ def _svg_step8_complete() -> str:
   <text x="205" y="70" text-anchor="middle" font-size="10" fill="#1b5e20" font-weight="bold" font-family="sans-serif">竹コースター滑り台　完成！</text>
 </svg>'''
 
-
-_STEP_SVGS = [
-    _svg_step1_pipe,
-    _svg_step2_cut,
-    _svg_step3_frame,
-    _svg_step4_node,
-    _svg_step5_roller,
-    _svg_step6_handrail,
-    _svg_step7_slope,
-    _svg_step8_complete,
-]
 
 
 # ── SVG：③ 垂木の両側挟み込み固定（画像確認に基づく正確な構造）──
@@ -3513,16 +3529,11 @@ def main():
         with col2:
             st.markdown(svg_top, unsafe_allow_html=True)
 
-        # ── 製作手順ガイド（滑り台・ブランコ・ジャングルジム）──
-        if tool_name == "滑り台":
-            st.divider()
-            render_slide_construction_guide(diameter)
-        elif tool_name == "ブランコ":
-            st.divider()
-            render_swing_construction_guide(diameter)
-        elif tool_name == "ジャングルジム":
-            st.divider()
-            render_junglegym_construction_guide(diameter)
+        # ── 製作手順ガイド（各プラグインの render_guide() に委譲）──
+        # render_guide() のデフォルト実装は pass なので、
+        # ガイドのない遊具では何も表示されない。
+        st.divider()
+        plugin.render_guide(diameter)
 
         st.divider()
         st.subheader(f"🎋 直径 {diameter}cm の竹　材料リスト")
